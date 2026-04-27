@@ -6,6 +6,8 @@ To extract spatial features, MediaPipe was implemented for real-time hand tracki
 
 The dataset consists of video recordings of Filipino Sign Language (FSL), where each clip contains a signer performing a specific word or phrase. These videos were sourced from the FSL-105 Dataset developed by Tupal, Isaiah Jassen (2023) from De La Salle University and made publicly available via Mendeley Data.
 
+The training code is maintained in a separate private repository to safeguard proprietary methods, prevent misuse of the dataset, and ensure compliance with data usage agreements.
+
 ## Trained Categories and Classes
 The current categories and classes the model was trained on are:
 
