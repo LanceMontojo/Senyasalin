@@ -1,10 +1,13 @@
-# Senyasalin - Training 
+# Senyasalin – Model Training Overview
 
-The project was trained with Long-Short Term Memory (LSTM) for learning sequence of data such as the sequence of movement in sign language. Mediapipe was also implemnted as it helps with real-time inference on knowing the keypoints/location of the user's hand and movements. 
+The model was trained using Long Short-Term Memory (LSTM) networks to learn sequential patterns in sign language, particularly the temporal progression of gestures.
 
-The data used consist of video recordings of FSL, each showing a signer performing a specific phrase or expression. The organized collection of these videos was obtained from the FSL-105 Dataset developed by Tupal, Isaiah Jassen (2023) of De La Salle University, and made publicly available through Mendeley Data. 
+To extract spatial features, MediaPipe was implemented for real-time hand tracking. It detects hand landmarks (keypoints), which are then used as input sequences for the LSTM model.
 
-The current categories and classes the model was trained are:
+The dataset consists of video recordings of Filipino Sign Language (FSL), where each clip contains a signer performing a specific word or phrase. These videos were sourced from the FSL-105 Dataset developed by Tupal, Isaiah Jassen (2023) from De La Salle University and made publicly available via Mendeley Data.
+
+## Trained Categories and Classes
+The current categories and classes the model was trained on are:
 
 Family:
 - Mother
@@ -42,10 +45,12 @@ Relationship:
 - Girl
 
 Numbers:
-- Values One through Twenty
+- One (1) to Twenty (20)
 
-Additionally, there were signs that are added that extend the system’s functionality to support the creation of simple sentences.
-This is the Additional category that includes:
+## Additional Vocabulary (Sentence Construction Support)
+Additionally, extra signs were added to extend the system’s functionality and support the creation of simple sentences.
+
+This additional category includes:
 - Meat
 - Eggs
 - Juice
