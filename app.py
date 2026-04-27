@@ -94,7 +94,53 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run57.pt")
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resolve_model_path(model_path_hint):
+    """Resolve checkpoint path from repo root, Models/ folder, or recursive search."""
+    hint = (model_path_hint or "run57.pt").strip()
+    basename = os.path.basename(hint)
+
+    candidates = []
+
+    def _add_candidate(path_value):
+        if not path_value:
+            return
+        normalized = os.path.normpath(path_value)
+        if normalized not in candidates:
+            candidates.append(normalized)
+
+    _add_candidate(hint)
+    if not os.path.isabs(hint):
+        _add_candidate(os.path.join(_REPO_ROOT, hint))
+    _add_candidate(os.path.join(_REPO_ROOT, "Models", hint))
+    _add_candidate(os.path.join(_REPO_ROOT, basename))
+    _add_candidate(os.path.join(_REPO_ROOT, "Models", basename))
+
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return os.path.abspath(candidate)
+
+    skip_dirs = {".git", ".venv", "venv", "__pycache__", "node_modules"}
+    matches = []
+    for root, dirs, files in os.walk(_REPO_ROOT):
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
+        if basename in files:
+            matches.append(os.path.join(root, basename))
+
+    if matches:
+        matches.sort(key=lambda p: (len(p), p.lower()))
+        return os.path.abspath(matches[0])
+
+    checked = "\n - ".join(candidates)
+    raise FileNotFoundError(
+        f"Could not find model checkpoint '{hint}'. Checked:\n - {checked}"
+    )
+
+
+MODEL_PATH_HINT = os.getenv("MODEL_PATH") or os.getenv("MODEL_A_PATH", r"run57.pt")
+MODEL_PATH = _resolve_model_path(MODEL_PATH_HINT)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -148,21 +194,14 @@ def _build_model_from_checkpoint(model_path):
 
 
 MODEL_PROFILES = {
-    "A": _build_model_from_checkpoint(MODEL_A_PATH),
+    "MODEL": _build_model_from_checkpoint(MODEL_PATH),
 }
 
-INPUT_SIZE = MODEL_PROFILES["A"]["input_size"]
-SEQ_LEN = MODEL_PROFILES["A"]["seq_len"]
+SINGLE_MODEL_KEY = "MODEL"
+MODEL_PROFILE = MODEL_PROFILES[SINGLE_MODEL_KEY]
 
-for model_key, profile in MODEL_PROFILES.items():
-    if profile["input_size"] != INPUT_SIZE:
-        raise ValueError(
-            f"Model {model_key} FEATURE_DIM mismatch: {profile['input_size']} vs {INPUT_SIZE}"
-        )
-    if profile["seq_len"] != SEQ_LEN:
-        raise ValueError(
-            f"Model {model_key} SEQ_LEN mismatch: {profile['seq_len']} vs {SEQ_LEN}"
-        )
+INPUT_SIZE = MODEL_PROFILE["input_size"]
+SEQ_LEN = MODEL_PROFILE["seq_len"]
 
 
 def _normalize_sign_key(raw_label):
@@ -245,27 +284,10 @@ def _normalize_sign_key(raw_label):
 
     return aliases.get(token, token)
 
-
-def _route_model_for_sign(raw_label):
-    # Single-model experiment: route every sign to model A.
-    _ = _normalize_sign_key(raw_label)
-    return "A"
-
-
-def _pick_model_for_request(data):
-    _ = data
-    return "A"
-
-
-def _pick_model_hint_for_request(data):
-    """Single-model experiment: no hint needed."""
-    _ = data
-    return "A"
-
 # Get tensor dtypes for TensorRT engine if available
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 use_trt = False
-TRT_MODEL_KEY = "A"
+TRT_MODEL_KEY = SINGLE_MODEL_KEY
 
 # Helper: map TensorRT dtype enum → numpy dtype
 def _trt_dtype_to_np(trt_dtype):
@@ -318,12 +340,11 @@ else:
 
 print("Loaded Config:")
 print("SEQ_LEN from config:", SEQ_LEN)
-for model_key, profile in MODEL_PROFILES.items():
-    print(
-        f"[APP] Loaded model {model_key} from {profile['path']} "
-        f"→ hidden={profile['hidden_size']}, layers={profile['num_layers']}, "
-        f"dropout={profile['dropout']}, classes={len(profile['classes'])}"
-    )
+print(
+    f"[APP] Loaded model {SINGLE_MODEL_KEY} from {MODEL_PROFILE['path']} "
+    f"→ hidden={MODEL_PROFILE['hidden_size']}, layers={MODEL_PROFILE['num_layers']}, "
+    f"dropout={MODEL_PROFILE['dropout']}, classes={len(MODEL_PROFILE['classes'])}"
+)
 
 _mp_holistic_mod = mp.solutions.holistic
 
@@ -430,8 +451,8 @@ def get_demo_video_path(label):
     chosen = random.choice(candidates)
     return f"static/video/{category}/{chosen}"
 
-def run_inference(x, model_key="A"):
-    """Run inference via TensorRT (model A only) or PyTorch for selected model."""
+def run_inference(x, model_key=SINGLE_MODEL_KEY):
+    """Run inference via TensorRT or PyTorch for the selected model."""
     profile = MODEL_PROFILES[model_key]
     model_classes = profile["classes"]
 
@@ -472,17 +493,6 @@ def _normalized_confidence(max_prob, num_classes):
     denom = max(1e-8, 1.0 - baseline)
     norm = (float(max_prob) - baseline) / denom
     return max(0.0, min(1.0, norm))
-
-
-MODEL_SCORE_WEIGHTS = {
-    "A": float(os.getenv("AUTO_MODEL_A_WEIGHT", "1.0")),
-    "B": float(os.getenv("AUTO_MODEL_B_WEIGHT", "1.0")),
-    "C": float(os.getenv("AUTO_MODEL_C_WEIGHT", "0.97")),
-}
-
-MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.04"))
-NON_C_STRONG_CONF = float(os.getenv("AUTO_NON_C_STRONG_CONF", "0.985"))
-EXPECTED_MODEL_SCORE_BONUS = float(os.getenv("AUTO_EXPECTED_MODEL_SCORE_BONUS", "0.08"))
 
 
 def log_top3(probs, classes, tag="INFERENCE"): # Print top 3 predictions for debugging
@@ -804,7 +814,7 @@ def predict():
         np.save("tmp_live_seq.npy", live_seq)
         print(f"[DEBUG] Saved live sequence to tmp_live_seq.npy  shape={live_seq.shape}")
 
-        model_key = _pick_model_for_request(data)
+        model_key = SINGLE_MODEL_KEY
         classes = MODEL_PROFILES[model_key]["classes"]
 
         probs = run_inference(x, model_key=model_key)
@@ -855,7 +865,6 @@ def predict_auto():
     try:
         data = request.get_json(force=True) or {}
         realtime_probe = bool(data.get("realtime", False))
-        expected_model_hint = _pick_model_hint_for_request(data)
         # For error handling of no hand detected
         if (
             ("sequence" not in data and "features" not in data) or
@@ -872,40 +881,13 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        model_results = []
-        for model_key, profile in MODEL_PROFILES.items():
-            probs = run_inference(x, model_key=model_key)
-            classes = profile["classes"]
-            log_top3(probs, classes, tag=f"AUTO-{model_key}")
+        model_key = SINGLE_MODEL_KEY
+        profile = MODEL_PROFILES[model_key]
+        classes = profile["classes"]
+        probs = run_inference(x, model_key=model_key)
+        log_top3(probs, classes, tag=f"AUTO-{model_key}")
 
-            if not np.any(np.isfinite(probs)):
-                continue
-
-            pred_idx = int(np.argmax(probs))
-            conf = float(np.max(probs))
-            norm_conf = _normalized_confidence(conf, len(classes))
-            weighted_score = norm_conf * MODEL_SCORE_WEIGHTS.get(model_key, 1.0)
-            if expected_model_hint and model_key == expected_model_hint:
-                weighted_score += EXPECTED_MODEL_SCORE_BONUS
-            model_results.append({
-                "model": model_key,
-                "probs": probs,
-                "classes": classes,
-                "pred_idx": pred_idx,
-                "label": classes[pred_idx],
-                "conf": conf,
-                "norm_conf": norm_conf,
-                "weighted_score": weighted_score,
-            })
-            print(
-                f"[AUTO-SCORE] model={model_key} label={classes[pred_idx]} "
-                f"raw={conf:.4f} norm={norm_conf:.4f} "
-                f"weight={MODEL_SCORE_WEIGHTS.get(model_key, 1.0):.3f} "
-                f"bonus={EXPECTED_MODEL_SCORE_BONUS if (expected_model_hint and model_key == expected_model_hint) else 0.0:.3f} "
-                f"score={weighted_score:.4f}"
-            )
-
-        if not model_results:
+        if not np.any(np.isfinite(probs)):
             print("[AUTO] Unrecognized Sign (non-finite probabilities)")
             return jsonify({
                 "prediction": "Unrecognized Sign",
@@ -913,62 +895,31 @@ def predict_auto():
                 "message": "Unrecognized sign"
             })
 
+        pred_idx = int(np.argmax(probs))
+        label = classes[pred_idx]
+        conf = float(np.max(probs))
+        norm_conf = _normalized_confidence(conf, len(classes))
+
         NOT_FSL_THRESHOLD = 0.70
         THRESHOLD = 0.92
         NOT_FSL_NORM_THRESHOLD = 0.72
         THRESHOLD_NORM = 0.90
 
-        best_any = max(model_results, key=lambda r: r["weighted_score"])
-        candidates = [
-            r for r in model_results
-            if r["conf"] >= NOT_FSL_THRESHOLD and r["norm_conf"] >= NOT_FSL_NORM_THRESHOLD
-        ]
-
-        if not candidates:
-            print(
-                f"[AUTO] Unrecognized Sign (best_model={best_any['model']}, "
-                f"raw={best_any['conf']:.4f}, norm={best_any['norm_conf']:.4f})"
-            )
+        if conf < NOT_FSL_THRESHOLD or norm_conf < NOT_FSL_NORM_THRESHOLD:
+            print(f"[AUTO] Unrecognized Sign (raw={conf:.4f}, norm={norm_conf:.4f})")
             return jsonify({
                 "prediction": "Unrecognized Sign",
-                "confidence": best_any["conf"],
+                "confidence": conf,
                 "message": "Unrecognized sign"
             })
-
-        best = max(candidates, key=lambda r: r["weighted_score"])
-
-        # Guard against model C dominating due to easier calibration:
-        # if C only narrowly beats a very confident A/B, prefer non-C.
-        if (
-            best["model"] == "C"
-            and not expected_model_hint
-            and MODEL_C_OVERRIDE_MARGIN > 0.0
-        ):
-            non_c = [r for r in candidates if r["model"] != "C"]
-            if non_c:
-                best_non_c = max(non_c, key=lambda r: r["weighted_score"])
-                close_score = best_non_c["weighted_score"] >= (best["weighted_score"] - MODEL_C_OVERRIDE_MARGIN)
-                strong_non_c = best_non_c["conf"] >= NON_C_STRONG_CONF
-                if close_score and strong_non_c:
-                    print(
-                        f"[AUTO] Overriding C with {best_non_c['model']} "
-                        f"(C_score={best['weighted_score']:.4f}, nonC_score={best_non_c['weighted_score']:.4f}, "
-                        f"nonC_raw={best_non_c['conf']:.4f})"
-                    )
-                    best = best_non_c
-
-        conf = best["conf"]
-        label = best["label"]
-        norm_conf = best["norm_conf"]
         print(
-            f"[AUTO-CHOSEN] model={best['model']} label={label} "
-            f"raw={conf:.4f} norm={norm_conf:.4f} score={best['weighted_score']:.4f} "
-            f"expected_hint={expected_model_hint or 'none'}"
+            f"[AUTO-CHOSEN] model={model_key} label={label} "
+            f"raw={conf:.4f} norm={norm_conf:.4f}"
         )
 
         if conf < THRESHOLD or norm_conf < THRESHOLD_NORM:
-            closest_label = best["label"]
-            closest_conf = best["conf"]
+            closest_label = label
+            closest_conf = conf
 
             if not realtime_probe:
                 save_progress(closest_label, closest_conf)
@@ -979,7 +930,7 @@ def predict_auto():
                 "closest_confidence": round(closest_conf, 4),
                 "normalized_confidence": round(norm_conf, 4),
                 "confidence": conf,
-                "model": best["model"],
+                "model": model_key,
                 "message": f"Incorrect — closest sign is {closest_label.replace('_', ' ')}"
             })
 
@@ -991,7 +942,7 @@ def predict_auto():
                 "prediction": label,
                 "confidence": conf,
                 "normalized_confidence": round(norm_conf, 4),
-                "model": best["model"],
+                "model": model_key,
                 "message": f"Correct — {label.replace('_', ' ')}"
             })
 
@@ -1008,7 +959,7 @@ def assess():
         data = request.get_json(force=True)
         x = prepare_sequence(data)
 
-        model_key = _pick_model_for_request(data)
+        model_key = SINGLE_MODEL_KEY
         classes = MODEL_PROFILES[model_key]["classes"]
 
         probs = run_inference(x, model_key=model_key)
