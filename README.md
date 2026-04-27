@@ -24,3 +24,17 @@ The Auto section enables continuous, free-flow recognition. Users can perform si
 
 ## Results Section
 The Results section summarizes user performance, including total attempts, correct and incorrect predictions, and usage streaks. It also provides a category-based assessment for the current session, highlighting areas that need improvement and best-performing categories.
+
+## Installation and Setup
+1. Download or clone the repository
+2. Open the project folder
+3. Run the application: python app.py
+4. Go to SIGN UP and create an account/ go to LOGIN and enter credentials
+5. After login, access Learn, Select, Activity, Auto, Results
+
+The system runs fully offline. Once launched, users can register and log in to access all features.
+
+## System Requirements
+- Webcam-enabled device
+- Camera permission enabled
+- Sufficient CPU/GPU for real-time processing
