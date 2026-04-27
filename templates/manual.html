@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% block title %}User Manual – Senyasalin{% endblock %}
+{% block content %}
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* ── Manual Layout ─────────────────────────────────── */
+  .manual-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 12px 20px 24px;
+  }
+
+  .manual-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .manual-header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .manual-header p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+  }
+  .manual-header .version {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 10px;
+    background: var(--white);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+
+  .btn-row-manual {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-manual {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    color: var(--white);
+    box-shadow: 0 2px 6px var(--shadow);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 40px;
+  }
+  .btn-manual:hover {
+    box-shadow: 0 6px 20px var(--shadow);
+  }
+  .btn-print {
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+  }
+  .btn-back {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+  }
+
+  /* ── TOC ────────────────────────────────────────────── */
+  .manual-toc {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .manual-toc h2 {
+    font-size: 16px;
+    font-weight: 900;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  .manual-toc ol {
+    padding-left: 24px;
+  }
+  .manual-toc li {
+    margin-bottom: 2px;
+  }
+  .manual-toc a {
+    color: var(--deep-blue);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .manual-toc a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Section Cards ──────────────────────────────────── */
+  .manual-section {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 14px 18px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .manual-section h2 {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--off-white);
+  }
+
+  .manual-section h3 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    margin: 10px 0 6px;
+  }
+  .manual-section p,
+  .manual-section li {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    line-height: 1.6;
+  }
+  .manual-section ul, .manual-section ol {
+    padding-left: 20px;
+    margin-bottom: 6px;
+  }
+  .manual-section li {
+    margin-bottom: 2px;
+  }
+
+  .key {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #333;
+    border: 1px solid #ddd;
+  }
+
+  .tip-box {
+    background: linear-gradient(135deg, rgba(6,214,160,0.08), rgba(76,201,240,0.08));
+    border-left: 3px solid var(--grass-green);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+  }
+  .tip-box strong { color: var(--grass-green); }
+
+  .warn-box {
+    background: linear-gradient(135deg, rgba(255,107,157,0.08), rgba(255,140,66,0.08));
+    border-left: 3px solid var(--coral);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+  }
+  .warn-box strong { color: var(--coral); }
+
+  /* ── Print styles ───────────────────────────────────── */
+  @media print {
+    body { background: #fff !important; }
+    .navbar, .footer, .btn-row-manual, #tutorial-overlay, .tut-help-btn { display: none !important; }
+    .manual-wrap { padding: 0; max-width: 100%; }
+    .manual-section, .manual-toc { box-shadow: none; break-inside: avoid; border: 1px solid #eee; }
+    .manual-header h1 { -webkit-text-fill-color: #4361EE; color: #4361EE; }
+  }
+
+  /* ── Responsive ─────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .manual-wrap { padding: 20px 14px 60px; }
+    .manual-header h1 { font-size: 28px; }
+    .manual-section { padding: 18px 16px; }
+    .manual-section h2 { font-size: 20px; }
+  }
+</style>
+
+<div class="manual-wrap">
+
+  <!-- Header -->
+  <div class="manual-header">
+    <h1>Senyasalin User Manual</h1>
+    <p>A complete guide to the Offline Filipino Sign Language Recognition System</p>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="manual-toc">
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#sec-overview">Overview</a></li>
+      <li><a href="#sec-getting-started">Getting Started</a></li>
+      <li><a href="#sec-learn">Learn Mode</a></li>
+      <li><a href="#sec-select">Select & Practice Mode</a></li>
+      <li><a href="#sec-activity">Activity Mode</a></li>
+      <li><a href="#sec-auto">Auto Recognition Mode</a></li>
+      <li><a href="#sec-results">Results & Progress Tracking</a></li>
+      <li><a href="#sec-camera">Camera & Environment Tips</a></li>
+      <li><a href="#sec-troubleshooting">Troubleshooting</a></li>
+      <li><a href="#sec-faq">FAQ</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Overview -->
+  <div class="manual-section" id="sec-overview">
+    <h2>1. Overview</h2>
+    <p>
+      <strong>Senyasalin</strong> is an offline Filipino Sign Language (FSL) learning and recognition system.
+      It uses MediaPipe landmarks and an LSTM model to evaluate signs through your webcam in real time.
+    </p>
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Account-based practice</strong> with login-required training pages</li>
+      <li><strong>Learn Mode</strong> with category-based sign videos</li>
+      <li><strong>Select Mode</strong> for focused practice on a chosen sign</li>
+      <li><strong>Activity Mode</strong> for random sign challenges</li>
+      <li><strong>Auto Mode</strong> for continuous recognition</li>
+      <li><strong>Distance guidance</strong> with live meter and color status</li>
+      <li><strong>Result logging</strong> with streaks, daily summaries, and PDF export</li>
+    </ul>
+    <h3>Supported Sign Categories</h3>
+    <ul>
+      <li><strong>Numbers</strong> (5 signs)</li>
+      <li><strong>Colors</strong> (8 signs)</li>
+      <li><strong>Family</strong> (6 signs)</li>
+      <li><strong>Relationship</strong> (2 signs)</li>
+      <li><strong>Survival</strong> (5 signs)</li>
+    </ul>
+  </div>
+
+  <!-- 2. Getting Started -->
+  <div class="manual-section" id="sec-getting-started">
+    <h2>2. Getting Started</h2>
+
+    <h3>Creating an Account</h3>
+    <ol>
+      <li>Click <strong>SIGN UP</strong> in the navigation bar.</li>
+      <li>Enter a username and password, then confirm your password.</li>
+      <li>Click <strong>Create Account</strong>. You'll be redirected to the login page.</li>
+    </ol>
+
+    <h3>Logging In</h3>
+    <ol>
+      <li>Click <strong>LOGIN</strong> in the navigation bar.</li>
+      <li>Enter your username and password.</li>
+      <li>Click <strong>Log In</strong>. After logging in, LEARN, SELECT, ACTIVITY, AUTO, and RESULTS appear in the navigation bar.</li>
+    </ol>
+
+    <h3>Access Rules</h3>
+    <ul>
+      <li><strong>Public pages:</strong> HOME, ABOUT, USER MANUAL, LOGIN, SIGN UP</li>
+      <li><strong>Login required:</strong> LEARN, SELECT, ACTIVITY, AUTO, RESULTS</li>
+    </ul>
+
+    <div class="tip-box">
+      <strong>Tip:</strong> The first time you visit each page, an interactive tutorial will appear automatically.
+      You can check <em>"Don't show again"</em> once you're comfortable, or click the
+      <strong>?</strong> help button in the navbar to replay it anytime.
+    </div>
+
+    <h3>System Requirements</h3>
+    <ul>
+      <li>A device with a <strong>webcam</strong> (laptop, desktop with external camera, or tablet)</li>
+      <li>Allow camera permissions when prompted</li>
+      <li>Enough CPU/GPU resources for live video processing</li>
+    </ul>
+  </div>
+
+  <!-- 3. Learn Mode -->
+  <div class="manual-section" id="sec-learn">
+    <h2>3. Learn Mode</h2>
+    <p>
+      Learn Mode is the study page. You choose a category and sign, then watch its demonstration clip.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>LEARN</strong> from the navbar.</li>
+      <li>Select a category card (Numbers, Colors, Family, Relationship, Survival).</li>
+      <li>Click a sign badge to load that sign video.</li>
+      <li>Read the short learning steps shown below the video panel.</li>
+      <li>Repeat with multiple signs before moving to SELECT or ACTIVITY.</li>
+    </ol>
+    <div class="tip-box">
+      <strong>Tip:</strong> Focus on hand shape, hand height, and movement path. The practice modes use landmark motion, so consistency matters.
+    </div>
+  </div>
+
+  <!-- 4. Select & Practice -->
+  <div class="manual-section" id="sec-select">
+    <h2>4. Select & Practice Mode</h2>
+    <p>
+      Select Mode lets you choose one target sign and practice it repeatedly with immediate feedback.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>SELECT</strong> from the navbar.</li>
+      <li>Pick a category and a specific sign you want to practice.</li>
+      <li>Click <strong>Start Practice</strong> and wait through the 1-second prep phase.</li>
+      <li>Perform the sign during capture (around 5 seconds in standard mode).</li>
+      <li>Review the result: correct/incorrect plus guidance messages.</li>
+      <li>Use <strong>Show again</strong> and <strong>Try again</strong> when shown after an incorrect attempt.</li>
+    </ol>
+    <h3>Mode Options</h3>
+    <ul>
+      <li><strong>Real-Time Recognition:</strong> shorter rolling prediction while signing</li>
+      <li><strong>Show Timer:</strong> shows/hides the capture timer bar</li>
+      <li><strong>Show Results:</strong> shows/hides the live text feedback</li>
+      <li><strong>Show Visuals:</strong> shows/hides landmark visualization overlays</li>
+    </ul>
+    <h3>Feedback Behavior</h3>
+    <p>
+      Incorrect attempts can trigger a skeleton/video feedback guide. The app may also show warnings such as
+      <em>No hands detected</em>, <em>Too few frames</em>, or <em>One person at a time please</em>.
+    </p>
+    <div class="warn-box">
+      <strong>Note:</strong> Select and Activity save <strong>Correct</strong> and <strong>Incorrect</strong> attempts to your results history.
+    </div>
+  </div>
+
+  <!-- 5. Activity Mode -->
+  <div class="manual-section" id="sec-activity">
+    <h2>5. Activity Mode</h2>
+    <p>
+      Activity Mode is a challenge flow. The system selects a random sign from supported categories,
+      then you perform it under the same capture logic used in Select Mode.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>ACTIVITY</strong> from the navbar.</li>
+      <li>Click <strong>Start Activity</strong>.</li>
+      <li>Read the challenge sign shown in <strong>Your Challenge</strong>.</li>
+      <li>Perform the sign during capture and wait for evaluation.</li>
+      <li>Use <strong>Try again</strong> to retry the same sign after feedback.</li>
+    </ol>
+    <div class="tip-box">
+      <strong>Tip:</strong> There is no visible difficulty selector in this build. Difficulty comes from the randomness of selected signs.
+    </div>
+  </div>
+
+  <!-- 6. Auto Recognition -->
+  <div class="manual-section" id="sec-auto">
+    <h2>6. Auto Recognition Mode</h2>
+    <p>
+      Auto Mode continuously evaluates your signing and appends recognized results to the on-screen history.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>AUTO</strong> from the navbar.</li>
+      <li>Allow camera access if prompted.</li>
+      <li>Click <strong>Start Learning!</strong> to begin capture.</li>
+      <li>Sign naturally while keeping hands visible.</li>
+      <li>Watch the detection card, result overlay, and history panel for updates.</li>
+      <li>Click <strong>Stop</strong> to end the session.</li>
+    </ol>
+    <h3>Recognition Thresholds Used by Auto Mode</h3>
+    <ul>
+      <li><strong>Confidence &lt; 0.70:</strong> Unrecognized Sign</li>
+      <li><strong>0.70 to &lt; 0.92:</strong> Incorrect (closest sign hint shown)</li>
+      <li><strong>&gt;= 0.92:</strong> Correct</li>
+    </ul>
+    <div class="tip-box">
+      <strong>Tip:</strong> Enable <strong>Real-Time Recognition</strong> for faster rolling commits, or disable it for slower, full-window evaluations.
+    </div>
+  </div>
+
+  <!-- 7. Results & Progress -->
+  <div class="manual-section" id="sec-results">
+    <h2>7. Results & Progress Tracking</h2>
+    <p>
+      The Results page summarizes your attempts and trends from the database for the logged-in user.
+    </p>
+    <h3>Summary Dashboard</h3>
+    <ul>
+      <li><strong>Total Attempts</strong>, <strong>Correct</strong>, <strong>Incorrect</strong>, and <strong>Streak (days)</strong></li>
+      <li><strong>Today summary</strong> badge with today correct/incorrect totals</li>
+      <li><strong>Most common</strong> sign based on recent data</li>
+    </ul>
+    <h3>History Views</h3>
+    <p>
+      You can review latest attempts and a daily activity table (last 14 days) with attempts,
+      correct, and incorrect counts.
+    </p>
+    <h3>Exporting Your Data</h3>
+    <p>
+      <strong>Export Results (PDF)</strong> supports two scopes:
+      <strong>Today only</strong> or <strong>Full history</strong>.
+    </p>
+  </div>
+
+  <!-- 8. Camera Tips -->
+  <div class="manual-section" id="sec-camera">
+    <h2>8. Camera & Environment Tips</h2>
+    <h3>Distance Guide (Exact Values Used in App)</h3>
+    <ul>
+      <li><strong>Perfect (green):</strong> <strong>0.36 m to 0.38 m</strong> (36-38 cm)</li>
+      <li><strong>Acceptable (yellow):</strong> <strong>0.33-0.35 m</strong> or <strong>0.39-0.41 m</strong></li>
+      <li><strong>Poor (red):</strong> below 0.33 m or above 0.41 m</li>
+    </ul>
+    <div class="tip-box">
+      <strong>Important:</strong> The distance meter is an estimate based on shoulder width and camera field-of-view.
+      Use it as guidance, not a medical-grade measurement.
+    </div>
+
+    <h3>General Camera Setup</h3>
+    <ul>
+      <li><strong>Lighting:</strong> Face a light source (e.g., a window or lamp). Avoid having bright light behind you.</li>
+      <li><strong>Background:</strong> A plain, uncluttered background helps the AI focus on your body.</li>
+      <li><strong>Framing:</strong> Keep face, shoulders, and both hands clearly visible.</li>
+      <li><strong>One person only:</strong> If multiple people appear, prediction may be blocked.</li>
+      <li><strong>Clothing:</strong> Avoid sleeves/backgrounds that blend with your hand color.</li>
+      <li><strong>Stability:</strong> Keep the camera steady. A tripod or stable surface is ideal.</li>
+    </ul>
+    <div class="warn-box">
+      <strong>Important:</strong> When the app asks for camera permission, click <em>Allow</em>.
+      If you accidentally deny it, go to the app's settings to re-enable camera access.
+    </div>
+  </div>
+
+  <!-- 9. Troubleshooting -->
+  <div class="manual-section" id="sec-troubleshooting">
+    <h2>9. Troubleshooting</h2>
+
+    <h3>Camera not working</h3>
+    <ul>
+      <li>Check that the app has camera permission.</li>
+      <li>Make sure no other application is using the camera at the same time.</li>
+      <li>Try refreshing the page or restarting the app.</li>
+    </ul>
+
+    <h3>Distance warning is always red</h3>
+    <ul>
+      <li>Move until the meter is near <strong>0.36-0.38 m</strong>.</li>
+      <li>Center your shoulders in frame.</li>
+      <li>Ensure only one person is visible.</li>
+    </ul>
+
+    <h3>Low recognition accuracy</h3>
+    <ul>
+      <li>Improve lighting conditions (see Camera Tips above).</li>
+      <li>Make sure your full upper body and hands are in the frame.</li>
+      <li>Hold the sign long enough to avoid <strong>Too few frames</strong>.</li>
+      <li>In Select/Activity, use <strong>Show again</strong> and retry the same sign.</li>
+    </ul>
+
+    <h3>Status says "No hands detected"</h3>
+    <ul>
+      <li>Raise both hands into the visible frame area.</li>
+      <li>Increase contrast between your hands and the background.</li>
+      <li>Do not move too fast at the start of capture.</li>
+    </ul>
+
+    <h3>Page loads slowly</h3>
+    <ul>
+      <li>The first load may take a moment while the AI model initializes.</li>
+      <li>Close unused applications to free up system resources.</li>
+      <li>If using a GPU-equipped machine, ensure GPU drivers are up to date for faster inference.</li>
+    </ul>
+
+    <h3>Cannot log in</h3>
+    <ul>
+      <li>Double-check your username and password for typos.</li>
+      <li>If you've forgotten your password, create a new account.</li>
+    </ul>
+  </div>
+
+  <!-- 10. FAQ -->
+  <div class="manual-section" id="sec-faq">
+    <h2>10. FAQ</h2>
+
+    <h3>Does the app need internet?</h3>
+    <p>No. Senyasalin runs fully offline. All AI models and resources are bundled locally.</p>
+
+    <h3>What is the recommended camera distance?</h3>
+    <p>
+      The implemented target range is <strong>0.36-0.38 m</strong> (green).
+      Yellow ranges are 0.33-0.35 m and 0.39-0.41 m.
+    </p>
+
+    <h3>What signs are supported?</h3>
+    <p>
+      The system recognizes signs across Numbers, Colors, Family, Relationship, and Survival.
+    </p>
+
+    <h3>How is my data stored?</h3>
+    <p>
+      Practice results are stored in a local SQLite database used by the app runtime.
+      No external cloud upload is performed by default.
+    </p>
+  </div>
+
+</div>
+
+{% endblock %}

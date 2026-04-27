@@ -1,0 +1,2739 @@
+{% extends "base.html" %}
+{% block title %}Select & Practice – FSL Learning{% endblock %}
+
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+  }
+
+
+
+  .app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 8px 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: #666;
+    margin-top: 1px;
+    font-weight: 600;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .rec-badge {
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    display: none;
+    box-shadow: 0 2px 6px rgba(255, 107, 157, 0.5);
+    background: var(--coral);
+    color: var(--white);
+  }
+
+  .rec-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--white);
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .status-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(6, 214, 160, 0.3);
+  }
+
+  .reset-btn {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    min-height: 36px;
+  }
+
+  .main-content {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .video-section {
+    flex: 2;
+    position: relative;
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px var(--shadow);
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .skeleton-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .skeleton-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(59, 130, 246, 0.9);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.5);
+  }
+
+  .feedback-text-overlay {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(80%, 760px);
+    background: rgba(15, 23, 42, 0.84);
+    color: var(--white);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    z-index: 29;
+    display: none;
+    pointer-events: none;
+  }
+
+  #skeletonCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .feedback-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+    display: none;
+  }
+
+  .pip-camera {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .camera-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .skeleton-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    overflow: hidden;
+    display: none;
+  }
+
+  .pip-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(76, 201, 240, 0.9);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    z-index: 16;
+    box-shadow: 0 1px 4px rgba(76, 201, 240, 0.5);
+  }
+
+  #mainCamera {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  #overlayCanvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 17;
+  }
+
+  .prep-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--sunshine);
+    display: none;
+    z-index: 20;
+    text-shadow: 2px 2px 6px #000;
+  }
+
+  .ghost-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: var(--lavender);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    z-index: 18;
+    box-shadow: 0 2px 6px rgba(167, 139, 250, 0.5);
+  }
+
+
+
+  .feedback-close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 107, 157, 0.9);
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 30;
+    box-shadow: 0 2px 6px rgba(255, 107, 157, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .feedback-close-btn:hover {
+    background: rgba(255, 60, 120, 1);
+  }
+
+  .timer-bar-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 30px 30px;
+    overflow: hidden;
+    z-index: 19;
+  }
+
+  .timer-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--grass-green), var(--sky-blue));
+    transition: width 0.1s linear;
+  }
+
+  .fps-counter {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: transparent;
+    color: var(--grass-green);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    z-index: 20;
+    box-shadow: none;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .sidebar {
+    flex: 0 0 390px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .selection-card {
+    flex: 0 0 auto;
+    max-height: 52%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .status-card {
+    flex: 1 1 auto;
+    min-height: 220px;
+    overflow-y: auto;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--deep-blue);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .selection-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 3px;
+  }
+
+  .input-group select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 2px solid var(--grass-green);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--white);
+    color: #0f172a;
+    cursor: pointer;
+    min-height: 36px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  .input-group select option {
+    font-weight: 700;
+  }
+
+  .input-group select:focus {
+    outline: none;
+    border-color: var(--deep-blue);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+  }
+
+  .toggle-panel {
+    background: var(--off-white);
+    border-radius: 8px;
+    padding: 6px 8px;
+    border: 2px dashed #DDD;
+  }
+
+  .toggle-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--grass-green);
+  }
+
+  .toggle-item span {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .timer-display {
+    text-align: center;
+    font-weight: 700;
+    color: var(--white);
+    padding: 6px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-size: 16px;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
+    display: none;
+  }
+
+  .gesture-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 6px 8px;
+    background: var(--off-white);
+    border-radius: 8px;
+    border: 2px solid #DDD;
+  }
+
+  .gesture-info {
+    flex: 1;
+  }
+
+  .gesture-info-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .gesture-name {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .result-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #888;
+  }
+
+  .result-text.correct {
+    color: var(--grass-green);
+  }
+
+  .result-text.incorrect {
+    color: var(--coral);
+  }
+
+  .progress-section {
+    margin-bottom: 4px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .phase-text {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .frame-count {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .progress-bar-container {
+    height: 8px;
+    background: var(--off-white);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #DDD;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--grass-green), var(--sky-blue));
+  }
+
+  .assist-section {
+    margin-bottom: 4px;
+    padding: 6px 8px;
+    background: var(--off-white);
+    border-radius: 8px;
+    border: 2px dashed #DDD;
+    display: none;
+  }
+
+  .assist-buttons {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .assist-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 4px var(--shadow);
+    min-height: 36px;
+  }
+
+  .show-how-btn {
+    background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
+    color: var(--white);
+  }
+
+  .try-again-btn {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .assist-hint {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+
+  .start-button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(6, 214, 160, 0.3);
+    margin-bottom: 4px;
+    min-height: 44px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 6px;
+    background: var(--off-white);
+    border-radius: 8px;
+    border: 1px solid #DDD;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .stat-value.correct {
+    color: var(--grass-green);
+  }
+
+  .stat-value.incorrect {
+    color: var(--coral);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .info-text {
+    text-align: center;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.4;
+  }
+
+  .celebration-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 40;
+  }
+
+  .celebration-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    background: linear-gradient(135deg, rgba(6, 214, 160, 0.92), rgba(76, 201, 240, 0.92));
+    color: var(--white);
+    font-weight: 900;
+    font-size: 32px;
+    line-height: 1;
+    padding: 14px 24px;
+    border-radius: 16px;
+    opacity: 0;
+    box-shadow: 0 8px 24px rgba(6, 214, 160, 0.45);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    will-change: transform, opacity;
+  }
+
+  .celebration-text.show {
+    transition: transform 240ms ease-out, opacity 240ms ease-out;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  .celebration-particle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  @media (max-width: 1024px) {
+    .app-container {
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .logo {
+      font-size: 14px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 3px 10px;
+    }
+
+    .pip-camera {
+      width: 200px;
+      height: 150px;
+    }
+
+    .gesture-name {
+      font-size: 16px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+    }
+
+    .selection-card {
+      max-height: 50%;
+    }
+  }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<div class="app-container">
+  <div class="header">
+    <div>
+      <div class="logo">Select & Practice</div>
+      <div class="header-subtitle">Choose a gesture and practice with AI!</div>
+    </div>
+    <div class="header-controls">
+      <div class="rec-badge" id="recBadge">
+        <span class="rec-dot"></span>REC
+      </div>
+      <button id="resetBtn" class="reset-btn">↺ Reset</button>
+      <div class="status-badge" id="stateBadge">State: READY</div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="video-section">
+      <div class="skeleton-container">
+        <div class="feedback-text-overlay" id="feedbackTextOverlay"></div>
+        <!-- Main camera display (default view) -->
+        <div class="camera-display" id="cameraDisplay">
+          <span class="pip-label">Camera</span>
+          <video id="mainCamera" autoplay playsinline muted></video>
+          <canvas id="overlayCanvas"></canvas>
+          <div class="fps-counter" id="fpsCounter">FPS: 0</div>
+          <div id="distanceHintBadge" style="position:absolute;top:8px;left:8px;background:transparent;color:var(--grass-green);padding:8px 12px;border-radius:8px;font-size:15px;font-weight:800;font-family:'Courier New', monospace;z-index:21;box-shadow:none;width:350px;text-align:left;line-height:1.3;text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+            <div style="white-space:nowrap;">Distance: <span id="distanceValueLabel">-- m</span></div>
+            <div id="distanceHintLabel" style="margin-top:2px;white-space:normal;">Too far or too close</div>
+          </div>
+        </div>
+
+        <!-- Skeleton AI display (shown only for corrective feedback) -->
+        <div class="skeleton-display" id="skeletonDisplay" style="display: none;">
+          <span class="skeleton-label">Skeleton AI</span>
+          <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
+          <canvas id="skeletonCanvas"></canvas>
+          <video id="feedbackVideo" class="feedback-video" playsinline muted></video>
+        </div>
+
+        <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
+
+        <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
+
+        <div id="personWarning" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,107,157,0.95);color:#fff;padding:16px 32px;border-radius:20px;font-size:22px;font-weight:700;display:none;z-index:25;text-align:center;box-shadow:0 8px 24px rgba(255,107,157,0.5);pointer-events:none;"></div>
+
+
+
+        <div class="timer-bar-container">
+          <div class="timer-bar" id="timerBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Selection Card -->
+      <div class="card selection-card">
+        <div class="card-title">Selection</div>
+        
+        <div class="selection-grid">
+          <div class="input-group">
+            <label>Category</label>
+            <select id="categorySelect">
+              <option value="numbers">Numbers</option>
+              <option value="colors">Colors</option>
+              <option value="family">Family</option>
+              <option value="relationship">Relationship</option>
+              <option value="survival">Survival</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Gesture</label>
+            <select id="gestureSelect"></select>
+          </div>
+        </div>
+
+        <div class="toggle-panel" style="margin-top: 6px;">
+          <div class="toggle-title">Feedback Mode</div>
+          <div class="input-group" style="margin-bottom: 6px;">
+            <label for="feedbackSourceSelect">Feedback Source</label>
+            <select id="feedbackSourceSelect">
+              <option value="3d">3D Model Feedback</option>
+              <option value="learn">Learn Videos</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="feedbackGenderSelect">3D Model Type</label>
+            <select id="feedbackGenderSelect">
+              <option value="boy">Boy</option>
+              <option value="girl">Girl</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="toggle-panel" style="margin-top: 6px;">
+          <div class="toggle-title">Display Options</div>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleVisuals" checked>
+              <span>Landmarks</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleTimer" checked>
+              <span>Timer</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleResults" checked>
+              <span>Results</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleSpeed">
+              <span>Real-Time Recognition</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Status Card -->
+      <div class="card status-card">
+        <div class="card-title">Status & Results</div>
+
+        <div class="timer-display" id="timerOverlay">5</div>
+
+        <div class="gesture-status">
+          <div class="gesture-info">
+            <div class="gesture-info-label">Your Challenge:</div>
+            <div class="gesture-name" id="targetLabel">None</div>
+          </div>
+          <div class="result-text" id="resultText">—</div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="phase-text" id="capturePhase">Idle</span>
+            <span class="frame-count"><span id="frameCount">0</span>/48 frames</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar"></div>
+          </div>
+        </div>
+
+        <div class="assist-section" id="assistRow">
+          <div class="assist-buttons">
+            <button class="assist-btn show-how-btn" id="btnShowHow">Show again</button>
+            <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
+          </div>
+          <div class="assist-hint" id="assistHint"></div>
+        </div>
+
+        <div id="startOverlay">
+          <button class="start-button" id="startBtn">Start Practice!</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value correct" id="correctCount">0</span>
+            <span class="stat-label">Correct</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value incorrect" id="incorrectCount">0</span>
+            <span class="stat-label">Incorrect</span>
+          </div>
+        </div>
+
+        <p class="info-text">Flow: Pick gesture → Start → Get Ready (1s) → Perform (~5s) → Predict</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
+
+<script>
+window.addEventListener("load", () => {
+  const NUMBER_SIGNS = [
+    "One","Two","Three","Four","Five",
+    "Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen",
+    "Sixteen","Seventeen","Eighteen","Nineteen","Twenty"
+  ];
+  const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","Violet","White","Yellow"];
+  const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son","Auntie","Uncle","Cousin"];
+  const RELATIONSHIP_SIGNS = ["Boy","Girl"];
+  const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes","Please","Thank You"];
+  const NUMBER_LABELS = {
+    One: "One (1)",
+    Two: "Two (2)",
+    Three: "Three (3)",
+    Four: "Four (4)",
+    Five: "Five (5)",
+    Six: "Six (6)",
+    Seven: "Seven (7)",
+    Eight: "Eight (8)",
+    Nine: "Nine (9)",
+    Ten: "Ten (10)",
+    Eleven: "Eleven (11)",
+    Twelve: "Twelve (12)",
+    Thirteen: "Thirteen (13)",
+    Fourteen: "Fourteen (14)",
+    Fifteen: "Fifteen (15)",
+    Sixteen: "Sixteen (16)",
+    Seventeen: "Seventeen (17)",
+    Eighteen: "Eighteen (18)",
+    Nineteen: "Nineteen (19)",
+    Twenty: "Twenty (20)",
+  };
+  const COLOR_OPTION_STYLES = {
+    black:  { bg: '#111111', fg: '#ffffff', border: '#000000' },
+    blue:   { bg: '#1d4ed8', fg: '#ffffff', border: '#1e40af' },
+    green:  { bg: '#16a34a', fg: '#ffffff', border: '#15803d' },
+    orange: { bg: '#f97316', fg: '#ffffff', border: '#ea580c' },
+    pink:   { bg: '#ec4899', fg: '#ffffff', border: '#db2777' },
+    red:    { bg: '#dc2626', fg: '#ffffff', border: '#b91c1c' },
+    violet: { bg: '#8f00ff', fg: '#ffffff', border: '#7a00db' },
+    white:  { bg: '#ffffff', fg: '#334155', border: '#94a3b8' },
+    yellow: { bg: '#facc15', fg: '#422006', border: '#d97706' },
+  };
+
+  // Initialize display to show camera by default
+  const showCameraDisplay = () => {
+    document.getElementById("cameraDisplay").style.display = 'block';
+    document.getElementById("skeletonDisplay").style.display = 'none';
+  };
+
+  const showSkeletonDisplay = () => {
+    document.getElementById("cameraDisplay").style.display = 'none';
+    document.getElementById("skeletonDisplay").style.display = 'block';
+  };
+
+  showCameraDisplay();
+
+  const categorySelect = document.getElementById("categorySelect");
+  const gestureSelect  = document.getElementById("gestureSelect");
+
+  function getGestureDisplayLabel(category, sign) {
+    if (category === 'numbers') return NUMBER_LABELS[sign] || sign;
+    return sign;
+  }
+
+  function applyGestureSelectTheme() {
+    const category = categorySelect.value;
+    const selected = (gestureSelect.value || '').toLowerCase();
+
+    if (category === 'colors' && COLOR_OPTION_STYLES[selected]) {
+      const style = COLOR_OPTION_STYLES[selected];
+      gestureSelect.style.background = style.bg;
+      gestureSelect.style.color = style.fg;
+      gestureSelect.style.borderColor = style.border;
+      gestureSelect.style.boxShadow = '0 0 0 2px rgba(15, 23, 42, 0.18)';
+      return;
+    }
+
+    gestureSelect.style.background = 'var(--white)';
+    gestureSelect.style.color = '#0f172a';
+    gestureSelect.style.borderColor = 'var(--grass-green)';
+    gestureSelect.style.boxShadow = 'none';
+  }
+
+  function loadGestures() {
+    gestureSelect.innerHTML = "";
+    let signs = [];
+    const category = categorySelect.value;
+    if (category === "numbers") signs = NUMBER_SIGNS;
+    if (category === "colors")  signs = COLOR_SIGNS;
+    if (category === "family")  signs = FAMILY_SIGNS;
+    if (category === "relationship")  signs = RELATIONSHIP_SIGNS;
+    if (category === "survival")  signs = SURVIVAL_SIGNS;
+
+    signs.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = getGestureDisplayLabel(category, s);
+
+      if (category === 'colors') {
+        const style = COLOR_OPTION_STYLES[s.toLowerCase()];
+        if (style) {
+          opt.style.backgroundColor = style.bg;
+          opt.style.color = style.fg;
+        }
+      }
+
+      gestureSelect.appendChild(opt);
+    });
+
+    applyGestureSelectTheme();
+  }
+  categorySelect.onchange = () => {
+    loadGestures();
+  };
+  gestureSelect.onchange = applyGestureSelectTheme;
+  loadGestures();
+
+  let celebrationLayer = null;
+  let celebrationText = null;
+  let celebrationHideTimer = null;
+
+  function ensureCelebrationLayer() {
+    if (celebrationLayer && celebrationText) return;
+    const host = document.querySelector('.video-section') || document.body;
+    celebrationLayer = document.createElement('div');
+    celebrationLayer.className = 'celebration-layer';
+    celebrationText = document.createElement('div');
+    celebrationText.className = 'celebration-text';
+    celebrationText.textContent = '✓ Great Job!';
+    celebrationLayer.appendChild(celebrationText);
+    host.appendChild(celebrationLayer);
+  }
+
+  function launchCelebrationParticles() {
+    const colors = ['#FFD93D', '#FF6B9D', '#06D6A0', '#4CC9F0', '#A78BFA'];
+    const particleCount = 22;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'celebration-particle';
+      particle.style.background = colors[i % colors.length];
+      const cx = celebrationLayer.clientWidth / 2;
+      const cy = celebrationLayer.clientHeight / 2;
+      particle.style.left = `${cx}px`;
+      particle.style.top = `${cy}px`;
+      celebrationLayer.appendChild(particle);
+
+      const angle = (Math.PI * 2 * i) / particleCount;
+      const distance = 120 + Math.random() * 140;
+      const tx = Math.cos(angle) * distance;
+      const ty = Math.sin(angle) * distance;
+      const durationMs = 520 + Math.round(Math.random() * 260);
+
+      particle.style.transform = 'translate(-50%, -50%) scale(0.4)';
+      particle.style.opacity = '1';
+      void particle.offsetWidth;
+      particle.style.transition = `transform ${durationMs}ms ease-out, opacity ${durationMs}ms ease-out`;
+      particle.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0.2)`;
+      particle.style.opacity = '0';
+
+      setTimeout(() => particle.remove(), durationMs + 80);
+    }
+  }
+
+  function celebrate(){
+    ensureCelebrationLayer();
+    if (celebrationHideTimer) clearTimeout(celebrationHideTimer);
+    celebrationText.classList.remove('show');
+    void celebrationText.offsetWidth;
+    celebrationText.classList.add('show');
+    launchCelebrationParticles();
+    celebrationHideTimer = setTimeout(() => {
+      celebrationText.classList.remove('show');
+    }, 760);
+  }
+
+  const videoEl = document.getElementById("mainCamera");
+  const canvasEl = document.getElementById("overlayCanvas");
+  const skeletonCanvas = document.getElementById("skeletonCanvas");
+  const feedbackVideo = document.getElementById("feedbackVideo");
+  const feedbackTextOverlay = document.getElementById("feedbackTextOverlay");
+  const ctx = canvasEl.getContext("2d");
+  const skeletonCtx = skeletonCanvas.getContext("2d");
+  const fpsCounter = document.getElementById("fpsCounter");
+  let lastFrameTime = Date.now();
+  let fpsFrameCount = 0;
+  let fpsValue = 0;
+  const CAMERA_HFOV_DEG = 118;
+  const ASSUMED_SHOULDER_WIDTH_M = 0.34;
+  const GREEN_MIN_M = 0.36;
+  const GREEN_MAX_M = 0.38;
+  const YELLOW_NEAR_MIN_M = 0.33;
+  const YELLOW_NEAR_MAX_M = 0.35;
+  const YELLOW_FAR_MIN_M = 0.39;
+  const YELLOW_FAR_MAX_M = 0.41;
+  let smoothedDistanceM = null;
+  let guideScaleMultiplier = 1.0;
+  let pendingCorrectionOverlayText = '';
+
+  function setFeedbackOverlayText(text){
+    const message = (text || '').trim();
+    if(!message){
+      feedbackTextOverlay.textContent = '';
+      feedbackTextOverlay.style.display = 'none';
+      return;
+    }
+    feedbackTextOverlay.textContent = message;
+    feedbackTextOverlay.style.display = 'block';
+  }
+
+  function clearFeedbackOverlayText(){
+    setFeedbackOverlayText('');
+  }
+
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const stateBadge = document.getElementById("stateBadge");
+  const targetLabel = document.getElementById("targetLabel");
+  const resultText = document.getElementById("resultText");
+  const correctCountEl = document.getElementById("correctCount");
+  const incorrectCountEl = document.getElementById("incorrectCount");
+  const capturePhase = document.getElementById("capturePhase");
+  const frameCountEl = document.getElementById("frameCount");
+  const progressBar = document.getElementById("progressBar");
+  const prepOverlay = document.getElementById("prepOverlay");
+  const recBadge = document.getElementById("recBadge");
+  const personWarning = document.getElementById("personWarning");
+  const timerBar = document.getElementById("timerBar");
+  const distanceHintBadge = document.getElementById('distanceHintBadge');
+  const distanceValueLabel = document.getElementById('distanceValueLabel');
+  const distanceHintLabel = document.getElementById('distanceHintLabel');
+
+  const toggleVisuals = document.getElementById('toggleVisuals');
+  const toggleTimer   = document.getElementById('toggleTimer');
+  const toggleResults = document.getElementById('toggleResults');
+  const toggleSpeed   = document.getElementById('toggleSpeed');
+  const feedbackSourceSelect = document.getElementById('feedbackSourceSelect');
+  const feedbackGenderSelect = document.getElementById('feedbackGenderSelect');
+
+  let feedbackSource = localStorage.getItem('selectFeedbackSource') || '3d';
+  let feedbackGender = localStorage.getItem('selectFeedbackGender') || 'girl';
+  feedbackSourceSelect.value = feedbackSource;
+  feedbackGenderSelect.value = feedbackGender;
+  feedbackSourceSelect.onchange = () => {
+    feedbackSource = feedbackSourceSelect.value;
+    localStorage.setItem('selectFeedbackSource', feedbackSource);
+    feedbackGenderSelect.disabled = feedbackSource !== '3d';
+    feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+    if (feedbackSource === '3d') {
+      feedbackGender = 'girl';
+      feedbackGenderSelect.value = feedbackGender;
+      localStorage.setItem('selectFeedbackGender', feedbackGender);
+    }
+  };
+  feedbackGenderSelect.onchange = () => {
+    feedbackGender = feedbackGenderSelect.value;
+    localStorage.setItem('selectFeedbackGender', feedbackGender);
+  };
+  feedbackGenderSelect.disabled = feedbackSource !== '3d';
+  feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+
+  let showVisuals = true;
+  let showTimer   = true;
+  let showResults = true;
+
+  toggleVisuals.onchange = () => { showVisuals = toggleVisuals.checked; };
+  toggleTimer.onchange   = () => {
+    showTimer = toggleTimer.checked;
+    if (toggleSpeed.checked) {
+      timerBar.style.display = 'none';
+      return;
+    }
+    timerBar.style.display = showTimer ? 'block' : 'none';
+  };
+  toggleResults.onchange = () => {
+    showResults = toggleResults.checked;
+    resultText.style.display = showResults ? 'block' : 'none';
+  };
+  toggleSpeed.onchange = () => {
+    if (toggleSpeed.checked) {
+      timerBar.style.display = 'none';
+      capturePhase.textContent = running ? 'Perform Now (real-time mode)...' : 'Idle';
+    } else {
+      timerBar.style.display = showTimer ? 'block' : 'none';
+      if (running && state === STATE_CAPTURE) {
+        capturePhase.textContent = 'Perform Now (~5 s)...';
+      }
+    }
+  };
+
+  const STATE_READY=0, STATE_PREP=1, STATE_CAPTURE=2;
+  let state=STATE_READY;
+  function setState(s){ state=s; stateBadge.textContent="State: "+["READY","PREP","CAPTURE"][s]; }
+
+  let targetGesture=null, correctCount=0, incorrectCount=0;
+  const SEQ_LEN = 48, CAPTURE_MAX = 120;
+  const BASE_CAPTURE_MS = 5000;
+  let CAPTURE_MS = BASE_CAPTURE_MS;
+  let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
+  let lastPersonCount=1; // Track latest person count for prediction gating
+  const ALTITUDE_SAMPLE_MAX = 30;
+  let recentAltitudeSamples = [];
+  const REALTIME_MIN_FRAMES = 16;
+  const REALTIME_MIN_INTERVAL_MS = 300;
+  let realtimeLastPredictMs = 0;
+  let realtimePredicting = false;
+
+  function updateGestureDisplay(gesture) {
+    targetLabel.textContent = gesture ? gesture : 'None';
+  }
+
+  function flattenHand(lms){ if(!lms) return new Float32Array(63); const a=[]; for(let i=0;i<21;i++){ const p=lms[i]; a.push(p.x,p.y,p.z);} return new Float32Array(a); }
+  function lm(list,idx){ if(!list||idx>=list.length) return {x:NaN,y:NaN,z:NaN}; return list[idx]; }
+  function dist2D(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy)||1e-6; }
+  function estimateDistanceMeters(anchors, frameWidth){
+    if(!anchorsValid(anchors) || !frameWidth) return null;
+    const shoulderNorm = dist2D(anchors.L_SH, anchors.R_SH);
+    const shoulderPx = shoulderNorm * frameWidth;
+    if(!Number.isFinite(shoulderPx) || shoulderPx <= 1) return null;
+    const focalPx = (frameWidth / 2) / Math.tan((CAMERA_HFOV_DEG * Math.PI / 180) / 2);
+    return (ASSUMED_SHOULDER_WIDTH_M * focalPx) / shoulderPx;
+  }
+  function smoothDistanceEstimate(distanceM){
+    if(!Number.isFinite(distanceM)) return smoothedDistanceM;
+    if(smoothedDistanceM === null){
+      smoothedDistanceM = distanceM;
+      return smoothedDistanceM;
+    }
+    smoothedDistanceM = smoothedDistanceM * 0.82 + distanceM * 0.18;
+    return smoothedDistanceM;
+  }
+  function getDistanceGuideState(distanceM, personCount){
+    if(personCount !== 1 || !Number.isFinite(distanceM)) return 'red';
+    if(distanceM >= GREEN_MIN_M && distanceM <= GREEN_MAX_M) return 'green';
+    const inNearYellow = distanceM >= YELLOW_NEAR_MIN_M && distanceM <= YELLOW_NEAR_MAX_M;
+    const inFarYellow = distanceM >= YELLOW_FAR_MIN_M && distanceM <= YELLOW_FAR_MAX_M;
+    if(inNearYellow || inFarYellow) return 'yellow';
+    return 'red';
+  }
+  function getDistanceGuideColor(state){
+    if(state === 'green') return 'rgba(6, 214, 160, 0.95)';
+    if(state === 'yellow') return 'rgba(255, 217, 61, 0.95)';
+    return 'rgba(255, 107, 157, 0.95)';
+  }
+  function getDistanceGuideMessage(state){
+    if(state === 'green') return 'You are at perfect distance';
+    if(state === 'yellow') return 'Good distance, but preferably adjust a bit';
+    return 'Too far or too close';
+  }
+  function drawDistanceGuide(state, anchors){
+    const color = getDistanceGuideColor(state);
+    const hasShoulders = anchorsValid(anchors);
+    const shoulderNorm = hasShoulders ? dist2D(anchors.L_SH, anchors.R_SH) : null;
+    const shoulderPx = hasShoulders ? Math.max(1, shoulderNorm * canvasEl.width) : null;
+    const unit = hasShoulders
+      ? Math.max(70, shoulderPx * 1.15 * guideScaleMultiplier)
+      : Math.min(canvasEl.width, canvasEl.height) * 0.34 * guideScaleMultiplier;
+    const rawCx = hasShoulders ? ((anchors.L_SH.x + anchors.R_SH.x) * 0.5 * canvasEl.width) : (canvasEl.width * 0.5);
+    const cx = Math.max(unit * 0.55, Math.min(canvasEl.width - unit * 0.55, rawCx));
+    const shoulderY = hasShoulders
+      ? ((anchors.L_SH.y + anchors.R_SH.y) * 0.5 * canvasEl.height + unit * 0.02)
+      : (canvasEl.height * (0.38 - (guideScaleMultiplier - 1.0) * 0.03));
+    const headR = unit * 0.22;
+    const topY = Math.max(8, shoulderY - (headR * 2 + unit * 0.08));
+    const neckY = topY + headR * 2 + unit * 0.01;
+    const neckHalfW = unit * 0.085;
+    const shoulderHalfW = unit * 0.33;
+    const chestDrop = unit * 0.16;
+    const bottomY = shoulderY + chestDrop;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 6;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = color;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, topY + headR, headR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - shoulderHalfW - unit * 0.06, bottomY);
+    ctx.quadraticCurveTo(cx - shoulderHalfW, shoulderY + chestDrop * 0.2, cx - shoulderHalfW + unit * 0.02, shoulderY);
+    ctx.quadraticCurveTo(cx - shoulderHalfW * 0.42, shoulderY - unit * 0.06, cx - neckHalfW, neckY);
+    ctx.lineTo(cx + neckHalfW, neckY);
+    ctx.quadraticCurveTo(cx + shoulderHalfW * 0.42, shoulderY - unit * 0.06, cx + shoulderHalfW - unit * 0.02, shoulderY);
+    ctx.quadraticCurveTo(cx + shoulderHalfW, shoulderY + chestDrop * 0.2, cx + shoulderHalfW + unit * 0.06, bottomY);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function formatDistance(distanceM){
+    if(!Number.isFinite(distanceM)) return '-- m';
+    return distanceM.toFixed(2) + ' m';
+  }
+  function refreshDistanceValueUi(distanceM, state){
+    distanceValueLabel.textContent = formatDistance(distanceM);
+    const color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
+    distanceValueLabel.style.color = color;
+    distanceHintLabel.textContent = getDistanceGuideMessage(state);
+    distanceHintLabel.style.color = color;
+    distanceHintBadge.style.color = color;
+  }
+
+  function normalizeGlobal(hand63,anchors){
+    if(!hand63||hand63.length!==63||!anchors.L_SH||!anchors.R_SH) return new Float32Array(63);
+    const out=new Float32Array(63);
+    const Cx=(anchors.L_SH.x+anchors.R_SH.x)/2;
+    const Cy=(anchors.L_SH.y+anchors.R_SH.y)/2;
+    const Cz=(anchors.L_SH.z+anchors.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(anchors.L_SH,anchors.R_SH));
+    for(let i=0;i<63;i+=3){
+      out[i]=(hand63[i]-Cx)/scale;
+      out[i+1]=(hand63[i+1]-Cy)/scale;
+      out[i+2]=(hand63[i+2]-Cz)/scale;
+    }
+    for(let i=0;i<63;i++) out[i]=Math.max(-5,Math.min(5,out[i]));
+    return out;
+  }
+
+  function normalizeAnchors(a){
+    // Transform face/pose anchors into the same shoulder-centered space as hands
+    if(!a||!a.L_SH||!a.R_SH||isNaN(a.L_SH.x)||isNaN(a.R_SH.x))return a;
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    const CLIP=5.0;
+    const n={};
+    for(const[k,v]of Object.entries(a)){
+      n[k]={x:Math.max(-CLIP,Math.min(CLIP,(v.x-Cx)/scale)),
+             y:Math.max(-CLIP,Math.min(CLIP,(v.y-Cy)/scale)),
+             z:Math.max(-CLIP,Math.min(CLIP,(v.z-Cz)/scale))};
+    }
+    return n;
+  }
+
+  function derivedAltitudeFeatures(L,R,anchors){
+    const out=[];
+    const brow_y=0.5*(anchors.brow_r.y+anchors.brow_l.y);
+    const SEL=[0,4,8,12,16,20];
+    for(const H of [L,R]){
+      for(const j of SEL){
+        const bx=j*3, by=j*3+1, bz=j*3+2;
+        const px=H[bx], py=H[by], pz=H[bz];
+        out.push(px-anchors.chin.x, py-anchors.chin.y, py-anchors.lip_u.y, py-brow_y, py-anchors.forehead.y, pz-anchors.nose.z);
+      }
+    }
+    return new Float32Array(out);
+  }
+
+  function normLabel(s){
+    if(!s) return "";
+    const x = String(s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const map = {
+      "1":"one","2":"two","3":"three","4":"four","5":"five",
+      "6":"six","7":"seven","8":"eight","9":"nine","10":"ten",
+      "11":"eleven","12":"twelve","13":"thirteen","14":"fourteen","15":"fifteen",
+      "16":"sixteen","17":"seventeen","18":"eighteen","19":"nineteen","20":"twenty",
+      "grandmother":"grandmother","grandma":"grandmother","lola":"grandmother",
+      "grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather",
+      "mom":"mother","mother":"mother","nanay":"mother",
+      "dad":"father","father":"father","tatay":"father",
+      "auntie":"auntie","uncle":"uncle","cousin":"cousin",
+      "boy":"boy","girl":"girl",
+      "son":"son","daughter":"daughter",
+      "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","violet":"violet","white":"white","yellow":"yellow",
+      "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes",
+      "please":"please","thankyou":"thankyou","thanks":"thankyou",
+      "drink":"drink","eat":"eat","cook":"cook","coffee":"coffee","juice":"juice","meat":"meat","rice":"rice","milk":"milk","eggs":"eggs"
+    };
+    return map[x] || x;
+  }
+  
+  function inferCategory(label){
+    const l = normLabel(label);
+    if (["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"].includes(l)) return "numbers";
+    if (["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"].includes(l)) return "family";
+    if (["boy","girl"].includes(l)) return "relationship";
+    if (["correct","no","understand","wrong","yes","please","thankyou"].includes(l)) return "survival";
+    if (["drink","eat","cook","coffee","juice","meat","rice","milk","eggs"].includes(l)) return "additional";
+    return "colors";
+  }
+
+  function getClosestSignHint(responseJson){
+    const closestRaw = responseJson?.closest_sign || responseJson?.closestSign;
+    if (!closestRaw) return '';
+    const closest = normLabel(closestRaw);
+    if (!closest) return '';
+    if (inferCategory(closest) === 'additional') {
+      return 'Closest sign hidden for this mode. Keep practicing and try again.';
+    }
+    return `Closest sign: ${closest}`;
+  }
+
+  function getAltitudeRule(signLabel){
+    const sign = normLabel(signLabel);
+    const rules = {
+      one: { level: 'below_chin', phrase: 'slightly below chin level' },
+      two: { level: 'below_chin', phrase: 'slightly below chin level' },
+      three: { level: 'below_chin', phrase: 'slightly below chin level' },
+      four: { level: 'below_chin', phrase: 'slightly below chin level' },
+      five: { level: 'below_chin', phrase: 'slightly below chin level' },
+      six: { level: 'chin', phrase: 'at chin level' },
+      seven: { level: 'chin', phrase: 'at chin level' },
+      eight: { level: 'chin', phrase: 'at chin level' },
+      nine: { level: 'chin', phrase: 'at chin level' },
+      ten: { level: 'below_chin', phrase: 'slightly below chin level' },
+      eleven: { level: 'below_chin', phrase: 'slightly below chin level' },
+      twelve: { level: 'below_chin', phrase: 'slightly below chin level' },
+      thirteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      fourteen: { level: 'below_chin', phrase: 'slightly below chin level' },
+      fifteen: { level: 'below_chin', phrase: 'slightly below chin level' },
+      sixteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      seventeen: { level: 'shoulder', phrase: 'at shoulder level' },
+      eighteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      nineteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      twenty: { level: 'chest', phrase: 'at upper-chest level' },
+      black: { level: 'forehead', phrase: 'at forehead level' },
+      blue: { level: 'below_chin', phrase: 'slightly below chin level' },
+      green: { level: 'below_chin', phrase: 'slightly below chin level' },
+      yellow: { level: 'below_chin', phrase: 'slightly below chin level' },
+      orange: { level: 'below_chin', phrase: 'slightly below chin level' },
+      violet: { level: 'chest', phrase: 'at upper-chest level' },
+      white: { level: 'chest', phrase: 'at upper-chest level' },
+      red: { level: 'lips', phrase: 'at lip level' },
+      pink: { level: 'lips', phrase: 'at lip level' },
+      father: { level: 'forehead', phrase: 'at forehead level' },
+      grandfather: { level: 'forehead', phrase: 'at forehead level' },
+      mother: { level: 'chin', phrase: 'at chin level' },
+      grandmother: { level: 'chin', phrase: 'at chin level' },
+      auntie: { level: 'cheek', phrase: 'at cheek level' },
+      uncle: { level: 'cheek', phrase: 'at cheek level' },
+      cousin: { level: 'eyebrow', phrase: 'at eyebrow level' },
+      boy: { level: 'forehead', phrase: 'at forehead level at the start of the sign' },
+      girl: { level: 'below_chin', phrase: 'slightly below chin level' },
+      correct: { level: 'chest', phrase: 'at upper-chest level' },
+      no: { level: 'below_chin', phrase: 'slightly below chin level' },
+      understand: { level: 'cheek', phrase: 'at cheek level' },
+      wrong: { level: 'chin', phrase: 'at chin level' },
+      yes: { level: 'below_chin', phrase: 'slightly below chin level' },
+      please: { level: 'below_shoulder', phrase: 'slightly below shoulder level' },
+      thankyou: { level: 'lips', phrase: 'at lip level' }
+    };
+    return rules[sign] || null;
+  }
+
+  function getPrimarySignKey(label){
+    if (!label) return '';
+    let raw = String(label).trim();
+    if (raw.includes('+')) raw = raw.split('+')[0].trim();
+    if (raw.includes('_')) raw = raw.split('_').pop().trim();
+    return normLabel(raw);
+  }
+
+  function computeTargetLevelY(rule, face, pose){
+    const foreheadY = lm(face, 10).y;
+    const lipY = lm(face, 13).y;
+    const chinY = lm(face, 152).y;
+    const browRightY = lm(face, 65).y;
+    const browLeftY = lm(face, 295).y;
+    const browY = Number.isFinite(browRightY) && Number.isFinite(browLeftY)
+      ? (browRightY + browLeftY) * 0.5
+      : foreheadY;
+    const shoulderLeftY = lm(pose, 11).y;
+    const shoulderRightY = lm(pose, 12).y;
+    const shoulderY = Number.isFinite(shoulderLeftY) && Number.isFinite(shoulderRightY)
+      ? (shoulderLeftY + shoulderRightY) * 0.5
+      : NaN;
+
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+
+    if (rule.level === 'forehead') return foreheadY;
+    if (rule.level === 'eyebrow') return browY;
+    if (rule.level === 'lips') return lipY;
+    if (rule.level === 'chin') return chinY;
+    if (rule.level === 'below_chin') return chinY + faceSpan * 0.22;
+    if (rule.level === 'cheek') return browY + (lipY - browY) * 0.55;
+    if (rule.level === 'shoulder') {
+      if (Number.isFinite(shoulderY)) return shoulderY;
+      return chinY + faceSpan * 0.75;
+    }
+    if (rule.level === 'below_shoulder') {
+      if (Number.isFinite(shoulderY)) return shoulderY + faceSpan * 0.28;
+      return chinY + faceSpan * 1.0;
+    }
+    if (rule.level === 'chest') {
+      if (Number.isFinite(shoulderY)) return shoulderY + faceSpan * 0.12;
+      return chinY + faceSpan * 0.9;
+    }
+    return NaN;
+  }
+
+  function getSigningHandY(landmarks){
+    if (!Array.isArray(landmarks) || landmarks.length < 21) return NaN;
+    const points = [0, 5, 9, 13, 17]
+      .map(i => landmarks[i])
+      .filter(p => p && Number.isFinite(p.y));
+    if (!points.length) return NaN;
+    return points.reduce((sum, p) => sum + p.y, 0) / points.length;
+  }
+
+  function getTargetZoneText(rule){
+    if (!rule) return 'the target height zone';
+    if (rule.level === 'below_chin') return 'just below chin level';
+    if (rule.level === 'below_shoulder') return 'just below shoulder level';
+    if (rule.level === 'shoulder') return 'shoulder level';
+    if (rule.level === 'chest') return 'upper chest level';
+    if (rule.level === 'lips') return 'lip level';
+    if (rule.level === 'eyebrow') return 'eyebrow level';
+    if (rule.level === 'forehead') return 'forehead level';
+    if (rule.level === 'cheek') return 'cheek level';
+    if (rule.level === 'chin') return 'chin level';
+    return rule.phrase || 'the target height zone';
+  }
+
+  function median(nums){
+    if (!Array.isArray(nums) || !nums.length) return NaN;
+    const sorted = [...nums].sort((a,b)=>a-b);
+    const mid = Math.floor(sorted.length/2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
+  }
+
+  function pickSigningHandLandmarks(face, rightHand, leftHand){
+    const hasRight = Array.isArray(rightHand) && rightHand.length >= 21;
+    const hasLeft = Array.isArray(leftHand) && leftHand.length >= 21;
+    if (hasRight && !hasLeft) return rightHand;
+    if (hasLeft && !hasRight) return leftHand;
+    if (!hasRight && !hasLeft) return null;
+
+    const noseX = lm(face, 1).x;
+    const rightWristX = lm(rightHand, 0).x;
+    const leftWristX = lm(leftHand, 0).x;
+    if (!Number.isFinite(noseX) || !Number.isFinite(rightWristX) || !Number.isFinite(leftWristX)) {
+      return rightHand;
+    }
+    return Math.abs(rightWristX - noseX) <= Math.abs(leftWristX - noseX) ? rightHand : leftHand;
+  }
+
+  function collectAltitudeSample(targetLabel, lmData){
+    const sign = getPrimarySignKey(targetLabel);
+    const rule = getAltitudeRule(sign);
+    if (!rule || sign === 'son' || sign === 'daughter') return;
+
+    const face = lmData?.faceLandmarks || [];
+    const pose = lmData?.poseLandmarks || [];
+    const rightHand = lmData?.rightHandLandmarks;
+    const leftHand = lmData?.leftHandLandmarks;
+    if (!face.length) return;
+
+    const hand = pickSigningHandLandmarks(face, rightHand, leftHand);
+    if (!hand) return;
+
+    const targetY = computeTargetLevelY(rule, face, pose);
+    const handY = getSigningHandY(hand);
+    const foreheadY = lm(face, 10).y;
+    const chinY = lm(face, 152).y;
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+    if (!Number.isFinite(targetY) || !Number.isFinite(handY) || !Number.isFinite(faceSpan)) return;
+
+    recentAltitudeSamples.push({
+      delta: handY - targetY,
+      faceSpan,
+      level: rule.level,
+      zoneText: getTargetZoneText(rule)
+    });
+    if (recentAltitudeSamples.length > ALTITUDE_SAMPLE_MAX) {
+      recentAltitudeSamples.shift();
+    }
+  }
+
+  function buildAltitudeFeedbackHint(targetLabel, lmData){
+    const sign = getPrimarySignKey(targetLabel);
+    if (!sign) return 'Match your hand height with the demo guide.';
+    if (sign === 'son' || sign === 'daughter') {
+      return 'This sign is motion-based; mirror the full movement sequence shown in the guide.';
+    }
+
+    const rule = getAltitudeRule(sign);
+    if (!rule) {
+      return 'Focus on handshape and movement timing for this sign. Vertical hand height is not graded here.';
+    }
+
+    const sampleSet = recentAltitudeSamples.filter(s => s && s.level === rule.level);
+    if (sampleSet.length >= 4) {
+      const delta = median(sampleSet.map(s => s.delta));
+      const faceSpan = Math.max(0.04, median(sampleSet.map(s => s.faceSpan)));
+      const tolerance = Math.max(0.018, faceSpan * (rule.level === 'chin' ? 0.12 : 0.15));
+      const zoneText = sampleSet[sampleSet.length - 1].zoneText || getTargetZoneText(rule);
+      if (delta < -tolerance) {
+        return `Lower your signing hand to ${zoneText}. Your hand is currently too high.`;
+      }
+      if (delta > tolerance) {
+        return `Raise your signing hand to ${zoneText}. Your hand is currently too low.`;
+      }
+      return `Keep your signing hand at ${zoneText}. Height is close, refine handshape and motion.`;
+    }
+
+    const face = lmData?.faceLandmarks || [];
+    const pose = lmData?.poseLandmarks || [];
+    const rightHand = lmData?.rightHandLandmarks;
+    const leftHand = lmData?.leftHandLandmarks;
+    const hand = pickSigningHandLandmarks(face, rightHand, leftHand);
+    const zoneText = getTargetZoneText(rule);
+
+    if (!face.length || !hand || !hand.length) {
+      return `Position your signing hand at ${zoneText}.`;
+    }
+
+    const targetY = computeTargetLevelY(rule, face, pose);
+    const handY = getSigningHandY(hand);
+    if (!Number.isFinite(targetY) || !Number.isFinite(handY)) {
+      return `Position your signing hand at ${zoneText}.`;
+    }
+
+    const foreheadY = lm(face, 10).y;
+    const chinY = lm(face, 152).y;
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+    const tolerance = Math.max(0.018, faceSpan * (rule.level === 'chin' ? 0.12 : 0.15));
+
+    if (handY < targetY - tolerance) {
+      return `Lower your signing hand to ${zoneText}. Your hand is currently too high.`;
+    }
+    if (handY > targetY + tolerance) {
+      return `Raise your signing hand to ${zoneText}. Your hand is currently too low.`;
+    }
+    return `Keep your signing hand at ${zoneText}. Height is close; refine handshape and motion.`;
+  }
+
+  async function fileExists(url) {
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      return res.ok;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function get3DFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    const prefixMap = { numbers: 'number', colors: 'color' };
+    const prefix = prefixMap[category] || category;
+    const candidates = [];
+
+    candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`);
+    candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}s_${key}.mp4`);
+
+    if (key === 'thankyou') {
+      candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_thank you.mp4`);
+      candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}s_thank you.mp4`);
+    }
+
+    return candidates;
+  }
+
+  function getLearnFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    const prefixMap = { numbers: 'number' };
+    const prefix = prefixMap[category] || category;
+    return `/static/learn_videos/${prefix}_${key}.mp4`;
+  }
+
+  function getLegacyFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    return `/static/video/${category}/${key}_01.mp4`;
+  }
+
+  async function resolveFeedbackUrl(label) {
+    const preferred = feedbackSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    const preferredList = Array.isArray(preferred) ? preferred : [preferred];
+    for (const candidate of preferredList) {
+      if (await fileExists(candidate)) {
+        return { url: candidate, source: feedbackSource };
+      }
+    }
+
+    const alternateSource = feedbackSource === '3d' ? 'learn' : '3d';
+    const alternate = alternateSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    const alternateList = Array.isArray(alternate) ? alternate : [alternate];
+    for (const candidate of alternateList) {
+      if (await fileExists(candidate)) {
+        return { url: candidate, source: alternateSource };
+      }
+    }
+
+    const legacy = getLegacyFeedbackUrl(label);
+    if (await fileExists(legacy)) {
+      return { url: legacy, source: 'legacy' };
+    }
+
+    return { url: null, source: null };
+  }
+
+  function packFeature(res){
+    const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
+    const anchors={};
+    anchors.L_SH=lm(pose,11); anchors.R_SH=lm(pose,12);
+    anchors.nose=lm(face,1); anchors.forehead=lm(face,10);
+    anchors.lip_u=lm(face,13); anchors.brow_r=lm(face,65); anchors.brow_l=lm(face,295);
+    anchors.chin=lm(face,152);
+    const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
+    const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
+    const lf=Lh?1:0, rf=Rh?1:0;
+    if(!Lh && !Rh) return null;
+    const L=normalizeGlobal(Lh,anchors), R=normalizeGlobal(Rh,anchors);
+    // Normalize anchors into same shoulder-centered space before computing altitude features
+    const na=normalizeAnchors(anchors);
+    const alt=derivedAltitudeFeatures(L,R,na);
+    return new Float32Array([...L,...R,...alt,lf,rf]);
+  }
+
+  function temporalFix(frames,seqLen,preserveStart=false){
+    if(frames.length<=seqLen){
+      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
+      return frames.concat(pad);
+    }
+    if(preserveStart){
+      const step=frames.length/seqLen;
+      const aligned=[];
+      for(let i=0;i<seqLen;i++){
+        const idx=Math.min(Math.floor(i*step),frames.length-1);
+        aligned.push(frames[idx]);
+      }
+      return aligned;
+    }
+    const scores=new Array(frames.length).fill(0);
+    for(let i=1;i<frames.length;i++){
+      const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
+      let motion=0; for(let j=0;j<f0.length-2;j++) motion+=Math.abs(f1[j]-f0[j]);
+      motion/=(f0.length-2);
+      const presence=f1[f1.length-2]+f1[f1.length-1];
+      scores[i]=0.7*motion+0.3*presence;
+    }
+    const W=Math.min(40,frames.length);
+    let bestStart=0, bestSum=-1e9, runSum=0;
+    for(let i=0;i<W;i++) runSum+=scores[i]; bestSum=runSum;
+    for(let i=1;i<=scores.length-W;i++){
+      runSum+=scores[i+W-1]-scores[i-1];
+      if(runSum>bestSum){bestSum=runSum; bestStart=i;}
+    }
+    const selected=frames.slice(bestStart,bestStart+W);
+    const step=selected.length/seqLen;
+    const aligned=[];
+    for(let i=0;i<seqLen;i++){
+      const idx=Math.min(Math.floor(i*step),selected.length-1);
+      aligned.push(selected[idx]);
+    }
+    return aligned;
+  }
+
+  function updateBuffer(f){
+    if(!f) return;
+    if(buf.length<CAPTURE_MAX) buf.push(f);
+    else { buf.shift(); buf.push(f); }
+    frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
+    progressBar.style.width=Math.min(100,Math.round((buf.length/CAPTURE_MAX)*100))+"%";
+    if(state===STATE_CAPTURE && captureStartMs){
+      const t=Math.max(0,Math.min(1,(Date.now()-captureStartMs)/CAPTURE_MS));
+      if (showTimer) timerBar.style.width=(t*100).toFixed(1)+'%';
+    } else {
+      timerBar.style.width='0%';
+    }
+    if(buf.length>=CAPTURE_MAX && !autoJudge){
+      autoJudge=true; setTimeout(()=>stopAndPredict(),200);
+    }
+  }
+
+  const PREDICT_URL = location.origin + '/predict';
+  const SAVE_URL = location.origin + '/api/save_result';
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
+  
+  async function callPredict(sequence) {
+    // Build expected class label (e.g. "Family_Father") so backend ALWAYS_CORRECT toggle can use it
+    let expectedLabel = undefined;
+    if (targetGesture) {
+      const cat = inferCategory(targetGesture);
+      const capCat = cat.charAt(0).toUpperCase() + cat.slice(1);
+      const first = targetGesture.split('+')[0].trim();
+      const capSign = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+      expectedLabel = capCat + '_' + capSign;
+    }
+    const body = expectedLabel ? { sequence, expected: expectedLabel } : { sequence };
+    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) };
+    const res = await fetch(PREDICT_URL, payload);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  }
+
+  async function saveResult(label, confidence = null) {
+    try {
+      const payload = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, confidence })
+      };
+      await fetch(SAVE_URL, payload);
+      try {
+        const raw = sessionStorage.getItem(CURRENT_SESSION_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push({ label, confidence, created_at: new Date().toISOString() });
+        sessionStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(arr.slice(-2000)));
+      } catch (_e) {}
+    } catch (e) {
+      console.error('Failed to save result:', e);
+    }
+  }
+
+  function extractPredictedLabel(j){
+    let predicted = j?.prediction || j?.label || j?.pred?.label || j?.pred?.class;
+    if (!predicted && Array.isArray(j?.topk) && j.topk.length) {
+      predicted = j.topk[0].label || j.topk[0].class || j.topk[0].name;
+    }
+    if (typeof predicted === "string" && predicted.includes("_")) {
+      predicted = predicted.split("_").pop();
+    }
+    return normLabel(predicted);
+  }
+
+  async function predictOnce(silent=false){
+    // No hands detected OR hands detected but no person found
+    if (buf.length < 5 || lastPersonCount !== 1) {
+      if (!silent && state === STATE_CAPTURE) {
+        const msg = buf.length < 5 ? 'No hands detected' : 'Hands detected but no person found';
+        resultText.textContent = msg;
+        resultText.className = 'result-text';
+        incorrectCount++;
+        incorrectCountEl.textContent = String(incorrectCount);
+        const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+        await saveResult(incorrectLabel, null);
+      }
+      return { predicted: null, raw: null };
+    }
+    if (buf.length < 16) {
+      if (!silent && state === STATE_CAPTURE) {
+        resultText.textContent = `Too few frames (${buf.length}/16), keep signing!`;
+        resultText.className = 'result-text';
+        incorrectCount++;
+        incorrectCountEl.textContent = String(incorrectCount);
+        const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+        await saveResult(incorrectLabel, null);
+      }
+      return { predicted: null, raw: null };
+    }
+    
+    const targetNorm = normLabel(targetGesture || '');
+    const preserveStart = targetNorm === 'son' || targetNorm === 'daughter';
+    const fixed = temporalFix(buf, SEQ_LEN, preserveStart);
+    const seq = fixed.flatMap(f => Array.from(f));
+
+    try {
+      const j = await callPredict(seq);
+      const predicted = extractPredictedLabel(j);
+
+      // Handle "Not in FSL dataset" response
+      if (j.prediction === 'Not in FSL dataset') {
+        if (!silent && state === STATE_CAPTURE) {
+          resultText.textContent = 'Not in FSL dataset';
+          resultText.className = 'result-text';
+          resultText.style.color = 'var(--lavender)';
+          incorrectCount++;
+          incorrectCountEl.textContent = String(incorrectCount);
+          const assistRow = document.getElementById("assistRow");
+          const assistHint = document.getElementById("assistHint");
+          assistRow.style.display = 'block';
+          assistHint.textContent = 'Sign not recognized in FSL. Try a different sign!';
+          await saveResult("Not in FSL dataset", j?.confidence || null);
+        }
+        return { predicted: null, raw: j };
+      }
+
+      if (silent) {
+        if (showResults) {
+          if (predicted) {
+            resultText.textContent = `Live: ${predicted}`;
+          } else {
+            resultText.textContent = 'Live: waiting...';
+          }
+          resultText.className = 'result-text';
+        }
+        return { predicted, raw: j };
+      }
+
+      if (!silent) {
+        const target = normLabel(targetGesture || '');
+        if (predicted && target && predicted === target) {
+          // CORRECT: Save the target gesture as the result
+          correctCount++;
+          resultText.textContent = '✓ Correct!';
+          resultText.className = 'result-text correct';
+          correctCountEl.textContent = String(correctCount);
+          pendingCorrectionOverlayText = '';
+          recentAltitudeSamples = [];
+          clearFeedbackOverlayText();
+          document.getElementById("assistRow").style.display = 'none';
+          celebrate();
+          // Save correct result with confidence from backend
+          await saveResult(target, j?.confidence || null);
+        } else {
+          // INCORRECT: Save "Incorrect" to record the failure
+          incorrectCount++;
+          resultText.textContent = '✗ Incorrect';
+          resultText.className = 'result-text incorrect';
+          incorrectCountEl.textContent = String(incorrectCount);
+          const assistRow = document.getElementById("assistRow");
+          const assistHint = document.getElementById("assistHint");
+          assistRow.style.display = 'block';
+          pendingCorrectionOverlayText = buildAltitudeFeedbackHint(targetGesture, _displayLM);
+          assistHint.textContent = getClosestSignHint(j);
+          clearFeedbackOverlayText();
+          // Save incorrect result
+          const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+          await saveResult(incorrectLabel, j?.confidence || null);
+        }
+      }
+      return { predicted, raw: j };
+    } catch (e) {
+      console.error(e);
+      if (!silent) {
+        resultText.textContent = '⚠️ Error';
+        resultText.className = 'result-text';
+        const assistRow = document.getElementById("assistRow");
+        const assistHint = document.getElementById("assistHint");
+        assistRow.style.display = 'block';
+        assistHint.textContent = 'Check that the backend is running.';
+      }
+      return { predicted: null, raw: null };
+    }
+  }
+
+  async function stopAndPredict(existingResult=null) {
+    if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
+    running = false;
+    recBadge.style.display = "none";
+    const result = existingResult || await predictOnce(false);
+    setState(STATE_READY);
+    capturePhase.textContent = "Idle";
+    startBtn.style.display = "inline-block";
+    timerBar.style.width = "0%";
+    stopNumericTimer();
+
+    // Auto-show skeleton feedback on incorrect result
+    const target = normLabel(targetGesture || '');
+    const predicted = normLabel(result?.predicted);
+    if (target && predicted && predicted !== target) {
+      triggerShowHow();
+    }
+  }
+
+  const HAND_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
+  const POSE_CONNECTIONS = [
+    [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
+    [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+    [11, 23], [12, 24], [23, 24],
+    [23, 25], [24, 26], [25, 27], [26, 28], [27, 29], [28, 30], [29, 31], [30, 32]
+  ];
+  
+  let ghostEnabled=false, ghostFrames=null, ghostIdx=0, ghostReady=false;
+  let previewMode=false;
+  let scaleMultiplier = 1.0;
+  let yOffset = 0;
+  let ghostPlaybackSpeed = 0.3;
+
+  const ghostBadge = document.getElementById("ghostBadge");
+
+  function showGhostUI(show){
+    ghostBadge.style.display = show ? 'inline-block' : 'none';
+  }
+
+  function anchorsValid(a){
+    if(!a || !a.L_SH || !a.R_SH) return false;
+    return Number.isFinite(a.L_SH.x) && Number.isFinite(a.R_SH.x) &&
+           Number.isFinite(a.L_SH.y) && Number.isFinite(a.R_SH.y) &&
+           dist2D(a.L_SH, a.R_SH) > 0.02;
+  }
+
+  async function startPreviewIfNeeded(){
+    if(state!==STATE_CAPTURE && !previewMode){
+      previewMode=true;
+      capturePhase.textContent='Preview mode…';
+      setState(STATE_READY);
+      timerBar.style.width='0%';
+      await camera.start();
+    }
+  }
+  
+  async function stopPreviewIfAny(){
+    if(previewMode){
+      previewMode=false;
+      capturePhase.textContent='Idle';
+      try{ await camera.stop(); }catch(_){}
+    }
+  }
+
+  async function findDemoUrl(cat, key){
+    const STATIC_BASE = (window.location.origin + '/static/video').replace(/\/+$/, '');
+    const names=[];
+    for(let i=1;i<=10;i++) names.push(key + '_' + String(i).padStart(2,'0') + '.mp4');
+    names.push(key + '.mp4');
+    for(const n of names){
+      const url = STATIC_BASE + '/' + cat + '/' + n;
+      try{
+        const r=await fetch(url,{method:'HEAD',cache:'no-store'});
+        if(r.ok) return url;
+      }catch(_){}
+    }
+    return null;
+  }
+
+  function drawGhostSkeleton(frame){
+    if(!frame || !ghostReady) return;
+    
+    skeletonCtx.save();
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    
+    if(frame.pose && frame.pose.length > 0){
+      skeletonCtx.strokeStyle = 'rgba(167, 139, 250, 0.9)';
+      skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 12;
+      skeletonCtx.shadowColor = 'rgba(167, 139, 250, 0.6)';
+      
+      POSE_CONNECTIONS.forEach(([start, end]) => {
+        const startPoint = frame.pose[start];
+        const endPoint = frame.pose[end];
+        if(startPoint && endPoint){
+          skeletonCtx.beginPath();
+          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+          skeletonCtx.stroke();
+        }
+      });
+      
+      frame.pose.forEach((landmark) => {
+        skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
+        skeletonCtx.beginPath();
+        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 6, 0, 2 * Math.PI);
+        skeletonCtx.fill();
+      });
+    }
+    
+    if(frame.face && frame.face.length > 0){
+      frame.face.forEach((landmark, idx) => {
+        if(idx % 10 === 0){
+          skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        }
+      });
+    }
+    
+    const drawHand = (landmarks, color) => {
+      if(!landmarks || landmarks.length === 0) return;
+      
+      skeletonCtx.strokeStyle = color;
+      skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 10;
+      skeletonCtx.shadowColor = color;
+      
+      HAND_CONN.forEach(([start, end]) => {
+        const startPoint = landmarks[start];
+        const endPoint = landmarks[end];
+        if(startPoint && endPoint){
+          skeletonCtx.beginPath();
+          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+          skeletonCtx.stroke();
+        }
+      });
+      
+      landmarks.forEach((landmark) => {
+        skeletonCtx.fillStyle = color;
+        skeletonCtx.beginPath();
+        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
+        skeletonCtx.fill();
+      });
+    };
+    
+    if(frame.rightHand && frame.rightHand.length > 0){
+      drawHand(frame.rightHand, 'rgba(76, 201, 240, 0.95)');
+    }
+    if(frame.leftHand && frame.leftHand.length > 0){
+      drawHand(frame.leftHand, 'rgba(6, 214, 160, 0.95)');
+    }
+    
+    skeletonCtx.restore();
+  }
+
+  async function loadGhostFor(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const assistHint = document.getElementById("assistHint");
+    assistHint.textContent='Loading skeleton guide…';
+    showGhostUI(false);
+    const url=await findDemoUrl(cat,key);
+    if(!url){ assistHint.textContent='No demo found for '+cat+'/'+key; ghostReady=false; return false; }
+    // Get video duration for frame count calculation
+    const v=document.createElement('video');
+    v.src=url; v.muted=true; v.playsInline=true;
+    await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
+    const total=Math.min(20, Math.max(10, Math.floor(v.duration*8)));
+    v.src=''; // release
+    // Process video server-side
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: total})
+    });
+    const data = await resp.json();
+    ghostFrames=[];
+    for(const frame of (data.frames||[])){
+      ghostFrames.push({
+        pose: frame.poseLandmarks || [],
+        face: frame.faceLandmarks || [],
+        rightHand: frame.rightHandLandmarks || [],
+        leftHand: frame.leftHandLandmarks || []
+      });
+    }
+    ghostReady = ghostFrames.length>0;
+    assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
+    return ghostReady;
+  }
+
+  let ghostTimer=null;
+  const GHOST_DURATION_MS=60000;
+  let ghostAnimationId = null;
+
+  // ── Ghost preload cache ───────────────────────────────────
+  let _ghostPreloadPromise = null;
+  let _ghostPreloadLabel = null;
+  let _preloadedFrames = null;
+
+  function preloadGhost(label) {
+    if (!label) return;
+    _ghostPreloadLabel = label;
+    _preloadedFrames = null;
+    _ghostPreloadPromise = loadGhostFor(label).then(ok => {
+      if (ok && _ghostPreloadLabel === label) {
+        _preloadedFrames = ghostFrames;
+      }
+      ghostFrames = null; ghostReady = false; ghostEnabled = false;
+      return ok;
+    }).catch(() => false);
+  }
+  
+  async function triggerShowHow() {
+    if(!targetGesture) return;
+    
+    if(ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    
+    // Stop camera processing to free resources for skeleton rendering
+    await camera.stop();
+    
+    ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
+    showSkeletonDisplay();
+    document.getElementById("feedbackCloseBtn").style.display = 'flex';
+    const overlayHint = pendingCorrectionOverlayText || buildAltitudeFeedbackHint(targetGesture, _displayLM);
+    setFeedbackOverlayText(overlayHint);
+
+    const { url: feedbackUrl, source: resolvedSource } = await resolveFeedbackUrl(targetGesture);
+    if (feedbackUrl) {
+      document.querySelector('.skeleton-label').textContent = 'Feedback Guide';
+      skeletonCanvas.style.display = 'none';
+      feedbackVideo.style.display = 'block';
+      feedbackVideo.controls = false;
+      feedbackVideo.loop = true;
+      feedbackVideo.src = feedbackUrl;
+      feedbackVideo.currentTime = 0;
+      try {
+        await feedbackVideo.play();
+      } catch (_e) {
+      }
+
+      if (ghostTimer) clearTimeout(ghostTimer);
+      ghostTimer=setTimeout(async () => {
+        dismissFeedback();
+        await camera.start();
+      }, GHOST_DURATION_MS);
+      return;
+    }
+
+    feedbackVideo.pause();
+    feedbackVideo.removeAttribute('src');
+    feedbackVideo.load();
+    feedbackVideo.style.display = 'none';
+    skeletonCanvas.style.display = 'block';
+    document.querySelector('.skeleton-label').textContent = 'Skeleton AI';
+
+    // Use preloaded data if available
+    let ok = false;
+    if (_preloadedFrames && _ghostPreloadLabel === targetGesture) {
+      ghostFrames = _preloadedFrames;
+      ghostReady = true;
+      ok = true;
+      document.getElementById("assistHint").textContent = 'Loading skeleton guide...';
+    } else if (_ghostPreloadPromise && _ghostPreloadLabel === targetGesture) {
+      document.getElementById("assistHint").textContent = 'Loading skeleton guide…';
+      ok = await _ghostPreloadPromise;
+      if (ok && _preloadedFrames) {
+        ghostFrames = _preloadedFrames;
+        ghostReady = true;
+      }
+    } else {
+      ok = await loadGhostFor(targetGesture);
+    }
+    
+    if (ok) {
+      triggerShowHow2D();
+    }
+  }
+  
+  // Original 2D skeleton function (fallback)
+  async function triggerShowHow2D() {
+    document.querySelector('.skeleton-label').textContent = 'Skeleton AI';
+    skeletonCanvas.style.display = 'block';
+    
+    showGhostUI(true);
+    const animateGhost = () => {
+      if(ghostEnabled && ghostReady && ghostFrames && ghostFrames.length){
+        const total=ghostFrames.length;
+        ghostIdx+=ghostPlaybackSpeed; 
+        if(ghostIdx>=total) ghostIdx=0;
+        const frameIdx = Math.floor(ghostIdx) % total;
+        drawGhostSkeleton(ghostFrames[frameIdx]);
+        ghostAnimationId = requestAnimationFrame(animateGhost);
+      } else {
+        ghostAnimationId = null;
+      }
+    };
+    animateGhost();
+    
+    if (ghostTimer) clearTimeout(ghostTimer);
+    ghostTimer=setTimeout(async () => {
+      dismissFeedback();
+      await camera.start();
+    }, GHOST_DURATION_MS);
+  }
+
+  function dismissFeedback() {
+    ghostEnabled = false;
+    ghostReady = false;
+    showGhostUI(false);
+    clearFeedbackOverlayText();
+    document.getElementById("feedbackCloseBtn").style.display = 'none';
+    if (ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
+    feedbackVideo.pause();
+    feedbackVideo.removeAttribute('src');
+    feedbackVideo.load();
+    feedbackVideo.style.display = 'none';
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    skeletonCanvas.style.display = 'block';
+    document.querySelector('.skeleton-label').textContent = 'Skeleton AI';
+    showCameraDisplay();
+  }
+
+  document.getElementById("btnShowHow").onclick = triggerShowHow;
+
+  document.getElementById("feedbackCloseBtn").onclick = async () => {
+    dismissFeedback();
+    await camera.start();
+  };
+
+  document.getElementById("btnTryAgain").onclick = () => {
+    dismissFeedback();
+    resultText.textContent = '—';
+    document.getElementById("assistRow").style.display = 'none';
+    pendingCorrectionOverlayText = '';
+    startBtn.click();
+  };
+
+  function mainOnResults(res){
+    ctx.save();
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+    // Person detection warnings
+    const pc = res.personCount;
+    if(pc !== undefined){
+      lastPersonCount = pc;
+      if(pc === 0){
+        personWarning.textContent = 'No one detected';
+        personWarning.style.display = 'block';
+      } else if(pc > 1){
+        personWarning.textContent = 'One person at a time please';
+        personWarning.style.display = 'block';
+      } else {
+        personWarning.style.display = 'none';
+      }
+    }
+
+    // Update FPS counter
+    fpsFrameCount++;
+    const now = Date.now();
+    const delta = now - lastFrameTime;
+    if (delta >= 500) {
+      fpsValue = Math.round((fpsFrameCount * 1000) / delta);
+      fpsCounter.textContent = 'FPS: ' + fpsValue;
+      fpsFrameCount = 0;
+      lastFrameTime = now;
+    }
+
+    const pose = res.poseLandmarks || [];
+    const face = res.faceLandmarks || [];
+    const anchors = {};
+    anchors.L_SH = lm(pose, 11);
+    anchors.R_SH = lm(pose, 12);
+    anchors.nose = lm(face, 1);
+    anchors.forehead = lm(face, 10);
+    anchors.lip_u = lm(face, 13);
+    anchors.brow_r = lm(face, 65);
+    anchors.brow_l = lm(face, 295);
+    anchors.chin = lm(face, 152);
+
+    const rawDistanceM = estimateDistanceMeters(anchors, canvasEl.width);
+    const distanceM = smoothDistanceEstimate(rawDistanceM);
+    const distanceState = getDistanceGuideState(distanceM, pc);
+    drawDistanceGuide(distanceState, anchors);
+    refreshDistanceValueUi(distanceM, distanceState);
+
+    if (showVisuals) {
+      const RH = res.rightHandLandmarks;
+      const LH = res.leftHandLandmarks;
+
+      const drawBox = (landmarks, color) => {
+        if (!landmarks || !landmarks.length) return;
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        landmarks.forEach(p => {
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(
+          minX * canvasEl.width,
+          minY * canvasEl.height,
+          (maxX - minX) * canvasEl.width,
+          (maxY - minY) * canvasEl.height
+        );
+        ctx.fillStyle = color;
+        landmarks.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x * canvasEl.width, p.y * canvasEl.height, 4, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+      };
+
+      if (RH) drawBox(RH, 'rgba(6,214,160,0.9)');
+      if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
+    }
+
+    // Only draw skeleton canvas when it's visible (during "Show me how" or for demo purposes)
+    // This reduces processing when the camera is the main display
+    const skeletonDisplayVisible = document.getElementById("skeletonDisplay").style.display !== 'none';
+    
+    if (!ghostEnabled && skeletonDisplayVisible) {
+      skeletonCtx.save();
+      skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+      
+      if (pose && pose.length > 0) {
+        skeletonCtx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+        skeletonCtx.lineWidth = 3;
+        skeletonCtx.shadowBlur = 8;
+        skeletonCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+        
+        POSE_CONNECTIONS.forEach(([start, end]) => {
+          const startPoint = pose[start];
+          const endPoint = pose[end];
+          if (startPoint && endPoint) {
+            skeletonCtx.beginPath();
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+            skeletonCtx.stroke();
+          }
+        });
+        
+        pose.forEach((landmark) => {
+          skeletonCtx.fillStyle = 'rgba(59, 130, 246, 0.9)';
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        });
+      }
+      
+      if (face && face.length > 0) {
+        face.forEach((landmark, idx) => {
+          if (idx % 10 === 0) {
+            skeletonCtx.fillStyle = 'rgba(249, 115, 22, 0.7)';
+            skeletonCtx.beginPath();
+            skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 2, 0, 2 * Math.PI);
+            skeletonCtx.fill();
+          }
+        });
+      }
+      
+      const drawHand = (landmarks, color) => {
+        if (!landmarks || landmarks.length === 0) return;
+        
+        skeletonCtx.strokeStyle = color;
+        skeletonCtx.lineWidth = 3;
+        skeletonCtx.shadowBlur = 6;
+        skeletonCtx.shadowColor = color;
+        
+        HAND_CONN.forEach(([start, end]) => {
+          const startPoint = landmarks[start];
+          const endPoint = landmarks[end];
+          if (startPoint && endPoint) {
+            skeletonCtx.beginPath();
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+            skeletonCtx.stroke();
+          }
+        });
+        
+        landmarks.forEach((landmark) => {
+          skeletonCtx.fillStyle = color;
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 4, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        });
+      };
+      
+      if (res.rightHandLandmarks) drawHand(res.rightHandLandmarks, 'rgba(76, 201, 240, 0.9)');
+      if (res.leftHandLandmarks) drawHand(res.leftHandLandmarks, 'rgba(6, 214, 160, 0.9)');
+      
+      skeletonCtx.restore();
+    }
+
+    ctx.restore();
+
+    if (running && state === STATE_CAPTURE) {
+      collectAltitudeSample(targetGesture, _displayLM);
+      frameCounter++;
+      if (frameCounter % frameSkip === 0) {
+        const feat = packFeature(_displayLM);
+        if (feat) {
+          updateBuffer(feat);
+          if (toggleSpeed.checked && buf.length >= REALTIME_MIN_FRAMES) {
+            const now = Date.now();
+            if (!realtimePredicting && (now - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS) {
+              realtimeLastPredictMs = now;
+              realtimePredicting = true;
+              predictOnce(false)
+                .then((result) => {
+                  if (running && state === STATE_CAPTURE && result && result.predicted) {
+                    stopAndPredict(result);
+                  }
+                })
+                .finally(() => { realtimePredicting = false; });
+            }
+          }
+        }
+      }
+
+      const elapsed = Date.now() - captureStartMs;
+      if (!toggleSpeed.checked && elapsed >= CAPTURE_MS && autoJudge === false) {
+        autoJudge = true;
+        setTimeout(() => stopAndPredict(), 80);
+      }
+    }
+  }
+  // Async server-side MediaPipe: camera renders at full speed,
+  // landmarks update in background whenever the server responds.
+  const _offCvs = document.createElement('canvas');
+  _offCvs.width = 320; _offCvs.height = 240;
+  const _offCtx = _offCvs.getContext('2d');
+  let _latestLM = {};
+  let _mpBusy = false;
+
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.30;  // lower = stronger smoothing (reduces thumb jitter)
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
+  const camera = new Camera(videoEl, {
+    onFrame: async function() {
+      const _smoothed = _smoothLandmarks();
+      mainOnResults({
+        poseLandmarks:      _smoothed.poseLandmarks,
+        faceLandmarks:      _smoothed.faceLandmarks,
+        rightHandLandmarks: _smoothed.rightHandLandmarks,
+        leftHandLandmarks:  _smoothed.leftHandLandmarks,
+        personCount:        _smoothed.personCount
+      });
+      if (!_mpBusy) {
+        _mpBusy = true;
+        _offCtx.drawImage(videoEl, 0, 0, 320, 240);
+        _offCvs.toBlob(function(blob) {
+          fetch('/api/landmarks', { method: 'POST', body: blob })
+            .then(function(r){ return r.json(); })
+            .then(function(lm){ _latestLM = lm; })
+            .catch(function(){})
+            .finally(function(){ _mpBusy = false; });
+        }, 'image/jpeg', 0.6);
+      }
+    },
+    width: 480, height: 360
+  });
+
+  const originalStart = () => {
+    CAPTURE_MS = BASE_CAPTURE_MS;
+
+    const chosen = gestureSelect.value;
+    if (!chosen) {
+      alert("Please select a gesture first.");
+      return;
+    }
+    targetGesture = chosen;
+    updateGestureDisplay(targetGesture);
+
+    // Preload ghost landmarks while user performs the sign
+    preloadGhost(targetGesture);
+
+    buf = [];
+    recentAltitudeSamples = [];
+    smoothedDistanceM = null;
+    frameCounter = 0;
+    autoJudge = false;
+    realtimeLastPredictMs = 0;
+    setState(STATE_PREP);
+
+    prepOverlay.style.display = "block";
+    recBadge.style.display = "none";
+    startBtn.style.display = "none";
+    resultText.textContent = "—";
+    capturePhase.textContent = "Get Ready…";
+    running = true;
+    pendingCorrectionOverlayText = '';
+    clearFeedbackOverlayText();
+    camera.start();
+    timerBar.style.width = "0%";
+    document.getElementById("assistRow").style.display = "none";
+
+    setTimeout(function () {
+      setState(STATE_CAPTURE);
+      prepOverlay.style.display = "none";
+      recBadge.style.display = "inline-block";
+      capturePhase.textContent = toggleSpeed.checked ? "Perform Now (real-time mode)..." : "Perform Now (~5 s)...";
+      captureStartMs = Date.now();
+      startNumericTimer(toggleSpeed.checked);
+    }, 1000);
+  };
+
+  startBtn.onclick = async () => {
+    dismissFeedback();
+    document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
+
+  const originalReset = () => {
+    correctCount=0; incorrectCount=0;
+    correctCountEl.textContent='0'; incorrectCountEl.textContent='0';
+    targetGesture=null; updateGestureDisplay(null); resultText.textContent='—';
+    pendingCorrectionOverlayText = '';
+    recentAltitudeSamples = [];
+    clearFeedbackOverlayText();
+    document.getElementById("assistRow").style.display='none';
+    document.getElementById("assistHint").textContent='';
+    ghostEnabled=false; ghostFrames=null; ghostIdx=0; ghostReady=false; showGhostUI(false);
+    if(ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    skeletonCanvas.style.display = 'block';
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    showCameraDisplay();
+    if (ghostTimer) clearTimeout(ghostTimer);
+    buf=[]; frameCounter=0; frameCountEl.textContent='0'; progressBar.style.width='0%'; timerBar.style.width='0%';
+    smoothedDistanceM=null;
+    realtimeLastPredictMs=0;
+    realtimePredicting=false;
+    capturePhase.textContent='Idle'; setState(STATE_READY);
+    stopNumericTimer();
+    startBtn.style.display='inline-block';
+    scaleMultiplier=1.0; yOffset=0; ghostPlaybackSpeed=0.3;
+  };
+  resetBtn.onclick = async () => {
+    document.body.classList.remove('camera-running'); await stopPreviewIfAny(); originalReset(); };
+
+  let tickInterval = null;
+  const timerOverlay = document.getElementById("timerOverlay");
+
+  function startNumericTimer(realtimeMode) {
+    if (!showTimer || realtimeMode) {
+      timerOverlay.style.display = "none";
+      return;
+    }
+    clearInterval(tickInterval);
+
+    let countdown = 5;
+    timerOverlay.textContent = countdown;
+    timerOverlay.style.display = "block";
+    timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
+
+    tickInterval = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        timerOverlay.textContent = "0";
+        timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
+        clearInterval(tickInterval);
+        setTimeout(() => (timerOverlay.style.display = "none"), 600);
+        return;
+      }
+      timerOverlay.textContent = countdown;
+      if (countdown <= 1) timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
+      else if (countdown <= 2) timerOverlay.style.background = "linear-gradient(135deg, var(--orange), var(--sunshine))";
+      else timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
+    }, 1000);
+  }
+
+  function stopNumericTimer() {
+    clearInterval(tickInterval);
+    timerOverlay.style.display = "none";
+  }
+
+  function resize(){
+    canvasEl.width = videoEl.clientWidth;
+    canvasEl.height = videoEl.clientHeight;
+    
+    const skeletonContainer = skeletonCanvas.parentElement;
+    skeletonCanvas.width = skeletonContainer.clientWidth;
+    skeletonCanvas.height = skeletonContainer.clientHeight;
+  }
+  
+  new ResizeObserver(resize).observe(videoEl);
+  new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
+  
+  resize();
+  window.addEventListener('resize', resize);
+
+  startPreviewIfNeeded().catch(err => {
+    console.warn('Auto camera start failed:', err);
+  });
+});
+</script>
+
+{% endblock %}

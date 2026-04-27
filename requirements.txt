@@ -1,0 +1,19 @@
+# Web framework
+flask
+flask-cors
+flask_sqlalchemy
+python-dotenv
+
+# Database
+psycopg2-binary
+
+# ML / Vision
+numpy<2       
+Pillow
+mediapipe
+opencv-python-headless
+python-osc
+
+# Jetson-only
+# tensorrt
+# pycuda

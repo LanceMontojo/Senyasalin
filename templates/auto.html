@@ -1,0 +1,1596 @@
+{% extends "base.html" %}
+{% block title %}Auto Recognition – FSL Learning{% endblock %}
+<!-- Cache bust: {{ range(1, 2)|random }} -->
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+  }
+
+  .app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 8px 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .status-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(6, 214, 160, 0.3);
+  }
+
+  .main-content {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .camera-section {
+    flex: 2;
+    position: relative;
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px var(--shadow);
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .camera-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  #cam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .live-badge {
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 11px;
+    display: none;
+    box-shadow: 0 2px 6px rgba(255, 107, 157, 0.5);
+    background: var(--coral);
+    color: var(--white);
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--white);
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .result-overlay {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: var(--white);
+    padding: 6px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+  }
+
+  .timer-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--sunshine);
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(255, 217, 61, 0.5);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .fps-counter {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: transparent;
+    color: var(--grass-green);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    z-index: 11;
+    box-shadow: none;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .ghost-badge {
+    position: absolute;
+    top: 40px;
+    right: 8px;
+    background: var(--lavender);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(167, 139, 250, 0.5);
+  }
+
+  .settings-panel {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
+    z-index: 9;
+    backdrop-filter: blur(10px);
+  }
+
+  .setting-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .setting-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: var(--grass-green);
+  }
+
+  .control-buttons {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .big-button {
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: none;
+    min-height: 44px;
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .stop-btn {
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: var(--white);
+    display: none;
+  }
+
+  .sidebar {
+    flex: 0 0 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 6px;
+  }
+
+  .detection-card {
+    flex: 0 0 auto;
+  }
+
+  .detected-sign {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+  }
+
+  .detection-status {
+    font-size: 13px;
+    font-weight: 700;
+    color: #888;
+  }
+
+  .frame-count {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .history-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .history-content {
+    flex: 1;
+    background: var(--off-white);
+    border-radius: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 13px;
+    margin-bottom: 8px;
+    border: 2px dashed #DDD;
+  }
+
+  .history-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .history-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .history-content::-webkit-scrollbar-thumb {
+    background: var(--sky-blue);
+    border-radius: 10px;
+  }
+
+  .clear-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    min-height: 40px;
+  }
+
+  .confetti {
+    display: none;
+  }
+
+  @media (max-width: 1024px) {
+    .app-container {
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .logo {
+      font-size: 14px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 3px 10px;
+    }
+
+    .big-button {
+      padding: 6px 18px;
+      font-size: 12px;
+    }
+
+    .detected-sign {
+      font-size: 20px;
+    }
+  }
+
+  .app-container {
+    height: calc(100vh - 64px);
+    min-height: 0;
+  }
+
+  .main-content {
+    min-height: 0;
+  }
+
+  .sidebar {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .camera-section {
+    min-height: 0;
+    display: flex;
+  }
+
+  .camera-wrapper {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .history-card {
+    min-height: 0;
+  }
+
+  .history-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<div class="app-container">
+  <div class="header">
+    <div class="logo">FSL Learning</div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="live-badge" id="recBadge">
+        <span class="live-dot"></span>LIVE
+      </div>
+      <div class="status-badge" id="stateBadge">Ready to Learn!</div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="camera-section">
+      <div class="camera-wrapper">
+        <video id="cam" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+
+        <div class="fps-counter" id="fpsCounter">FPS: 0</div>
+        <div id="distanceHintBadge" style="position:absolute;bottom:8px;right:8px;background:transparent;color:var(--grass-green);padding:8px 12px;border-radius:8px;font-size:15px;font-weight:800;font-family:'Courier New', monospace;z-index:21;box-shadow:none;width:350px;text-align:left;line-height:1.3;text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+          <div style="white-space:nowrap;">Distance: <span id="distanceValueLabel">-- m</span></div>
+          <div id="distanceHintLabel" style="margin-top:2px;white-space:normal;">Too far or too close</div>
+        </div>
+
+        <div class="result-overlay" id="gestureOverlay">—</div>
+
+        <div class="timer-overlay" id="timerOverlay">5</div>
+
+        <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
+
+        <div id="personWarning" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,107,157,0.95);color:#fff;padding:8px 16px;border-radius:12px;font-size:13px;font-weight:700;display:none;z-index:25;text-align:center;box-shadow:0 4px 12px rgba(255,107,157,0.5);pointer-events:none;"></div>
+
+        <div class="settings-panel">
+          <div class="setting-item">
+            <input type="checkbox" id="toggleVisuals" checked>
+            <span>Hand Markers</span>
+          </div>
+          <div class="setting-item">
+            <input type="checkbox" id="toggleTimer" checked>
+            <span>Timer</span>
+          </div>
+          <div class="setting-item">
+            <input type="checkbox" id="toggleResults" checked>
+            <span>Show Results</span>
+          </div>
+          <div class="setting-item">
+            <input type="checkbox" id="toggleSpeed">
+            <span>Real-Time Recognition</span>
+          </div>
+        </div>
+
+        <div class="control-buttons">
+          <button class="big-button start-btn" id="startBtn">Start Learning!</button>
+          <button class="big-button stop-btn" id="stopBtn">Stop</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card detection-card">
+        <div class="card-title">What You're Signing:</div>
+        <div class="detected-sign" id="detLabel">—</div>
+        <div class="detection-status" id="detStatus">Ready to start!</div>
+        <div class="frame-count" id="frameInfo">Capturing...</div>
+      </div>
+
+      <div class="card history-card">
+        <div class="card-title">Your Practice History</div>
+        <div class="history-content" id="history">
+          <div style="color: #999;">Start signing to see your progress!</div>
+        </div>
+        <button class="clear-btn" id="clearBtn">Clear History</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
+
+<script>
+(() => {
+  const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
+
+  const videoEl=document.getElementById('cam');
+  const canvasEl=document.getElementById('overlay');
+  const ctx=canvasEl.getContext('2d');
+  const fpsCounter=document.getElementById('fpsCounter');
+  let lastFrameTime=Date.now();
+  let fpsFrameCount=0;
+  let fpsValue=0;
+  const CAMERA_HFOV_DEG = 118;
+  const ASSUMED_SHOULDER_WIDTH_M = 0.34;
+  const FIXED_BASELINE_M = 0.37;
+  const GREEN_MIN_M = 0.36;
+  const GREEN_MAX_M = 0.38;
+  const YELLOW_NEAR_MIN_M = 0.33;
+  const YELLOW_NEAR_MAX_M = 0.35;
+  const YELLOW_FAR_MIN_M = 0.39;
+  const YELLOW_FAR_MAX_M = 0.41;
+  let smoothedDistanceM = null;
+  let guideScaleMultiplier = 1.0;
+  const startBtn=document.getElementById('startBtn');
+  const stopBtn=document.getElementById('stopBtn');
+  const clearBtn=document.getElementById('clearBtn');
+  const detLabel=document.getElementById('detLabel');
+  const detStatus=document.getElementById('detStatus');
+  const recBadge=document.getElementById('recBadge');
+  const historyEl=document.getElementById('history');
+  const stateBadge=document.getElementById('stateBadge');
+  const frameInfo=document.getElementById('frameInfo');
+  const toggleVisuals=document.getElementById('toggleVisuals');
+  const toggleTimer=document.getElementById('toggleTimer');
+  const toggleResults=document.getElementById('toggleResults');
+  const toggleSpeed=document.getElementById('toggleSpeed');
+  const gestureOverlay=document.getElementById('gestureOverlay');
+  const timerOverlay=document.getElementById('timerOverlay');
+  const ghostBadge=document.getElementById('ghostBadge');
+  const personWarning=document.getElementById('personWarning');
+  const distanceHintBadge=document.getElementById('distanceHintBadge');
+  const distanceValueLabel=document.getElementById('distanceValueLabel');
+  const distanceHintLabel=document.getElementById('distanceHintLabel');
+
+  const PREDICT_URL=location.origin+'/predict_auto';
+  const SAVE_URL=location.origin+'/api/save_result';
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
+  // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
+  // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
+  const SEQ_LEN = 48;
+  const CAPTURE_MAX = 80;  // Keep a rolling window for stable sequence extraction
+  const REALTIME_MIN_FRAMES = 16;
+  const REALTIME_MIN_INTERVAL_MS = 250;
+  const REALTIME_STABLE_HITS = 2;
+  const REALTIME_COMMIT_COOLDOWN_MS = 1200;
+  let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
+  let lastPersonCount=1; // Track latest person count for prediction gating
+  let frameSkip=2;
+  let predicting=false; // Lock: true while predict() is in-flight
+  let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
+  let realtimeLastPredictMs=0;
+  let realtimeStableLabel='';
+  let realtimeStableHits=0;
+  let realtimeLastCommittedLabel='';
+  let realtimeCooldownUntil=0;
+  let tickInterval=null,countdown=5;
+
+  const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
+
+  let ghostEnabled=false;
+  let ghostFrames=null;
+  let ghostIdx=0;
+  let ghostReady=false;
+  let loadingGhost=false;
+  let scaleMultiplier=1.08;
+  let yOffset=-0.08;
+  let ghostRenderFrames=0;
+  let activeGhostLabel='';
+  let pendingGhostLabel='';
+  const GHOST_LOOP_FRAMES=48;
+  const GHOST_LOOP_REPEATS=2;
+
+  // ── Client-side ghost frame cache ──────────────────────────
+  // Key: normLabel(label) → value: ghostFrames array
+  // Survives across predictions so repeat signs are instant.
+  const _ghostCache = new Map();
+  let _preloadBusy = false;
+
+  async function saveResult(label, confidence = null) {
+    try {
+      await fetch(SAVE_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({label, confidence})
+      });
+      try {
+        const raw = sessionStorage.getItem(CURRENT_SESSION_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push({ label, confidence, created_at: new Date().toISOString() });
+        sessionStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(arr.slice(-2000)));
+      } catch (_e) {}
+    } catch (_e) {}
+  }
+
+  function flattenHand(lms){if(!lms)return new Float32Array(63);const a=[];for(let i=0;i<21;i++){const p=lms[i];a.push(p.x,p.y,p.z);}return new Float32Array(a);}
+  function lm(list,idx){if(!list||idx>=list.length)return{x:NaN,y:NaN,z:NaN};return list[idx];}
+  function dist2D(a,b){const dx=a.x-b.x,dy=a.y-b.y;return Math.hypot(dx,dy)||1e-6;}
+  function normalizeGlobal(hand63,a){
+    if(!hand63||hand63.length!==63||!a.L_SH||!a.R_SH)return new Float32Array(63);
+    const out=new Float32Array(63);
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    for(let i=0;i<63;i+=3){out[i]=(hand63[i]-Cx)/scale;out[i+1]=(hand63[i+1]-Cy)/scale;out[i+2]=(hand63[i+2]-Cz)/scale;}
+    return out;
+  }
+  function normalizeAnchors(a){
+    // Transform face/pose anchors into the same shoulder-centered space as hands
+    if(!a||!a.L_SH||!a.R_SH||isNaN(a.L_SH.x)||isNaN(a.R_SH.x))return a;
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    const CLIP=5.0;
+    const n={};
+    for(const[k,v]of Object.entries(a)){
+      n[k]={x:Math.max(-CLIP,Math.min(CLIP,(v.x-Cx)/scale)),
+             y:Math.max(-CLIP,Math.min(CLIP,(v.y-Cy)/scale)),
+             z:Math.max(-CLIP,Math.min(CLIP,(v.z-Cz)/scale))};
+    }
+    return n;
+  }
+  function derivedAltitudeFeatures(L,R,a){
+    const out=[],SEL=[0,4,8,12,16,20],brow_y=0.5*(a.brow_r.y+a.brow_l.y);
+    for(const H of [L,R]){
+      for(const j of SEL){
+        const bx=j*3,by=j*3+1,bz=j*3+2;
+        const px=H[bx],py=H[by],pz=H[bz];
+        out.push(px-a.chin.x,py-a.chin.y,py-a.lip_u.y,py-brow_y,py-a.forehead.y,pz-a.nose.z);
+      }
+    }
+    return new Float32Array(out);
+  }
+  function packFeature(res){
+    const p=res.poseLandmarks||[],f=res.faceLandmarks||[];
+    const a={L_SH:lm(p,11),R_SH:lm(p,12),nose:lm(f,1),forehead:lm(f,10),lip_u:lm(f,13),brow_r:lm(f,65),brow_l:lm(f,295),chin:lm(f,152)};
+    const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
+    const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
+    if(!Lh&&!Rh)return null;
+    const L=normalizeGlobal(Lh,a),R=normalizeGlobal(Rh,a);
+    // Normalize anchors into same shoulder-centered space before computing altitude features
+    const na=normalizeAnchors(a);
+    const alt=derivedAltitudeFeatures(L,R,na);
+    return new Float32Array([...L,...R,...alt,Lh?1:0,Rh?1:0]);
+  }
+  
+  function temporalFix(frames,n){
+    if(frames.length<=n){
+      const pad=Array.from({length:n-frames.length},()=>frames[frames.length-1]);
+      return frames.concat(pad);
+    }
+    const step=frames.length/n;const out=[];
+    for(let i=0;i<n;i++){const idx=Math.min(Math.floor(i*step),frames.length-1);out.push(frames[idx]);}
+    return out;
+  }
+
+  function anchorsValid(a){
+    return a&&a.L_SH&&a.R_SH&&Number.isFinite(a.L_SH.x)&&Number.isFinite(a.R_SH.x)&&Number.isFinite(a.L_SH.y)&&Number.isFinite(a.R_SH.y);
+  }
+  function estimateDistanceMeters(anchors, frameWidth){
+    if(!anchorsValid(anchors) || !frameWidth) return null;
+    const shoulderNorm = dist2D(anchors.L_SH, anchors.R_SH);
+    const shoulderPx = shoulderNorm * frameWidth;
+    if(!Number.isFinite(shoulderPx) || shoulderPx <= 1) return null;
+    const focalPx = (frameWidth / 2) / Math.tan((CAMERA_HFOV_DEG * Math.PI / 180) / 2);
+    return (ASSUMED_SHOULDER_WIDTH_M * focalPx) / shoulderPx;
+  }
+  function smoothDistanceEstimate(distanceM){
+    if(!Number.isFinite(distanceM)) return smoothedDistanceM;
+    if(smoothedDistanceM === null){
+      smoothedDistanceM = distanceM;
+      return smoothedDistanceM;
+    }
+    smoothedDistanceM = smoothedDistanceM * 0.82 + distanceM * 0.18;
+    return smoothedDistanceM;
+  }
+  function getDistanceGuideState(distanceM, personCount){
+    if(personCount !== 1 || !Number.isFinite(distanceM)) return 'red';
+    if(distanceM >= GREEN_MIN_M && distanceM <= GREEN_MAX_M) return 'green';
+    const inNearYellow = distanceM >= YELLOW_NEAR_MIN_M && distanceM <= YELLOW_NEAR_MAX_M;
+    const inFarYellow = distanceM >= YELLOW_FAR_MIN_M && distanceM <= YELLOW_FAR_MAX_M;
+    if(inNearYellow || inFarYellow) return 'yellow';
+    return 'red';
+  }
+  function getDistanceGuideColor(state){
+    if(state === 'green') return 'rgba(6, 214, 160, 0.95)';
+    if(state === 'yellow') return 'rgba(255, 217, 61, 0.95)';
+    return 'rgba(255, 107, 157, 0.95)';
+  }
+  function getDistanceGuideMessage(state){
+    if(state === 'green') return 'You are at perfect distance';
+    if(state === 'yellow') return 'Good distance, but preferably adjust a bit';
+    return 'Too far or too close';
+  }
+  function formatDistance(distanceM){
+    if(!Number.isFinite(distanceM)) return '-- m';
+    return distanceM.toFixed(2) + ' m';
+  }
+  function refreshDistanceValueUi(distanceM, state){
+    const color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
+    distanceValueLabel.textContent = formatDistance(distanceM);
+    distanceValueLabel.style.color = color;
+    distanceHintLabel.textContent = getDistanceGuideMessage(state);
+    distanceHintLabel.style.color = color;
+    distanceHintBadge.style.color = color;
+  }
+  function drawDistanceGuide(state, anchors){
+    const color = getDistanceGuideColor(state);
+    const hasShoulders = anchorsValid(anchors);
+    const shoulderNorm = hasShoulders ? dist2D(anchors.L_SH, anchors.R_SH) : null;
+    const shoulderPx = hasShoulders ? Math.max(1, shoulderNorm * canvasEl.width) : null;
+    const unit = hasShoulders
+      ? Math.max(70, shoulderPx * 1.15 * guideScaleMultiplier)
+      : Math.min(canvasEl.width, canvasEl.height) * 0.34 * guideScaleMultiplier;
+    const rawCx = hasShoulders ? ((anchors.L_SH.x + anchors.R_SH.x) * 0.5 * canvasEl.width) : (canvasEl.width * 0.5);
+    const cx = Math.max(unit * 0.55, Math.min(canvasEl.width - unit * 0.55, rawCx));
+    const shoulderY = hasShoulders
+      ? ((anchors.L_SH.y + anchors.R_SH.y) * 0.5 * canvasEl.height + unit * 0.02)
+      : (canvasEl.height * (0.38 - (guideScaleMultiplier - 1.0) * 0.03));
+    const headR = unit * 0.22;
+    const topY = Math.max(8, shoulderY - (headR * 2 + unit * 0.08));
+    const neckY = topY + headR * 2 + unit * 0.01;
+    const neckHalfW = unit * 0.085;
+    const shoulderHalfW = unit * 0.33;
+    const chestDrop = unit * 0.16;
+    const bottomY = shoulderY + chestDrop;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 6;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = color;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, topY + headR, headR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - shoulderHalfW - unit * 0.06, bottomY);
+    ctx.quadraticCurveTo(cx - shoulderHalfW, shoulderY + chestDrop * 0.2, cx - shoulderHalfW + unit * 0.02, shoulderY);
+    ctx.quadraticCurveTo(cx - shoulderHalfW * 0.42, shoulderY - unit * 0.06, cx - neckHalfW, neckY);
+    ctx.lineTo(cx + neckHalfW, neckY);
+    ctx.quadraticCurveTo(cx + shoulderHalfW * 0.42, shoulderY - unit * 0.06, cx + shoulderHalfW - unit * 0.02, shoulderY);
+    ctx.quadraticCurveTo(cx + shoulderHalfW, shoulderY + chestDrop * 0.2, cx + shoulderHalfW + unit * 0.06, bottomY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGhostHand(norm63,anchors,ctx,color){
+    if(!norm63)return;
+    const baseScale=Math.max(1e-6,dist2D(anchors.L_SH,anchors.R_SH));
+    const scale=baseScale*scaleMultiplier;
+    const Cx=(anchors.L_SH.x+anchors.R_SH.x)/2;
+    const Cy=(anchors.L_SH.y+anchors.R_SH.y)/2+yOffset;
+
+    const pts=[];
+    for(let i=0;i<63;i+=3){
+      pts.push({x:norm63[i]*scale+Cx,y:norm63[i+1]*scale+Cy});
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.lineWidth=6;
+
+    const W=canvasEl.width,H=canvasEl.height;
+    for(const[a,b]of HAND_CONN){
+      const p=pts[a],q=pts[b];
+      ctx.beginPath();
+      ctx.moveTo(p.x*W,p.y*H);
+      ctx.lineTo(q.x*W,q.y*H);
+      ctx.stroke();
+    }
+    for(const p of pts){
+      ctx.beginPath();
+      ctx.arc(p.x*W,p.y*H,8,0,2*Math.PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function cleanLabel(s){
+    if(!s) return s;
+    let t = String(s)
+      .trim()
+      .replace(/^(Numbers|Colors|Color|Family|Relationship|Survival|Additional|Additionals)[_\s]+/i,'');
+    t = t.replace(/_/g,' ');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+  }
+
+  function normLabel(s){
+    if(!s)return "";
+    let x=String(s).toLowerCase();
+    x=x.replace(/^(numbers|colors|color|family|relationship|survival|additional|additionals)[_\s]+/,"");
+    x=x.replace(/[^a-z0-9]+/g,'');
+    const map={
+      "1":"one","2":"two","3":"three","4":"four","5":"five",
+      "6":"six","7":"seven","8":"eight","9":"nine","10":"ten",
+      "11":"eleven","12":"twelve","13":"thirteen","14":"fourteen","15":"fifteen",
+      "16":"sixteen","17":"seventeen","18":"eighteen","19":"nineteen","20":"twenty",
+      "grandmother":"grandmother","grandma":"grandmother","lola":"grandmother",
+      "grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather",
+      "mom":"mother","mother":"mother","nanay":"mother",
+      "dad":"father","father":"father","tatay":"father",
+      "auntie":"auntie","uncle":"uncle","cousin":"cousin",
+      "boy":"boy","girl":"girl","son":"son","daughter":"daughter",
+      "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","violet":"violet","white":"white","yellow":"yellow",
+      "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes",
+      "please":"please","thankyou":"thankyou","thanks":"thankyou",
+      "drink":"drink","eat":"eat","cook":"cook","coffee":"coffee","juice":"juice","meat":"meat","rice":"rice","milk":"milk","eggs":"eggs"
+    };
+    return map[x]||x;
+  }
+
+  function inferCategory(label){
+    const raw=String(label).toLowerCase();
+    if(raw.startsWith("numbers_"))return "numbers";
+    if(raw.startsWith("colors_")||raw.startsWith("color_"))return "colors";
+    if(raw.startsWith("family_"))return "family";
+    if(raw.startsWith("relationship_"))return "relationship";
+    if(raw.startsWith("survival_"))return "survival";
+    if(raw.startsWith("additional_")||raw.startsWith("additionals_"))return "additional";
+    const l=normLabel(label);
+    const numbers=["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+    const family=["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"];
+    const relationship=["boy","girl"];
+    const survival=["correct","no","understand","wrong","yes","please","thankyou"];
+    const additional=["drink","eat","cook","coffee","juice","meat","rice","milk","eggs"];
+    if(numbers.includes(l))return "numbers";
+    if(family.includes(l))return "family";
+    if(relationship.includes(l))return "relationship";
+    if(survival.includes(l))return "survival";
+    if(additional.includes(l))return "additional";
+    return "colors";
+  }
+
+  async function findDemoUrl(cat,key){
+    const STATIC_BASE=(window.location.origin+'/static/video').replace(/\/+$/,'');
+    const candidates=[];
+    for(let i=1;i<=10;i++){
+      candidates.push(`${key}_${String(i).padStart(2,'0')}.mp4`);
+    }
+    candidates.push(`${key}.mp4`);
+    for(const n of candidates){
+      const url=`${STATIC_BASE}/${cat}/${n}`;
+      try{
+        const r=await fetch(url,{method:'HEAD',cache:'no-store'});
+        if(r.ok)return url;
+      }catch(_){}
+    }
+    return null;
+  }
+
+  function _parseGhostFrames(data){
+    const frames=[];
+    for(const frame of (data.frames||[])){
+      const pose=frame.poseLandmarks||[];
+      const face=frame.faceLandmarks||[];
+      const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12),nose:lm(face,1),forehead:lm(face,10),lip_u:lm(face,13),brow_r:lm(face,65),brow_l:lm(face,295),chin:lm(face,152)};
+      const Lh=frame.rightHandLandmarks?flattenHand(frame.rightHandLandmarks):null;
+      const Rh=frame.leftHandLandmarks?flattenHand(frame.leftHandLandmarks):null;
+      if(!Lh&&!Rh)continue;
+      const L=Lh?normalizeGlobal(Lh,anchors):null;
+      const R=Rh?normalizeGlobal(Rh,anchors):null;
+      frames.push({L,R});
+    }
+    return frames;
+  }
+
+  async function _fetchGhostFrames(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const url=await findDemoUrl(cat,key);
+    if(!url)return null;
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: 24})
+    });
+    const data = await resp.json();
+    const frames = _parseGhostFrames(data);
+    return frames.length > 0 ? frames : null;
+  }
+
+  async function loadGhostFor(label){
+    const cacheKey = normLabel(label);
+    // 1️⃣ Check client-side cache first → instant
+    if(_ghostCache.has(cacheKey)){
+      ghostFrames = _ghostCache.get(cacheKey);
+      ghostReady = true;
+      return true;
+    }
+    // 2️⃣ Fetch from server (server has its own disk cache)
+    const frames = await _fetchGhostFrames(label);
+    if(frames){
+      _ghostCache.set(cacheKey, frames);
+      ghostFrames = frames;
+      ghostReady = true;
+      return true;
+    }
+    return false;
+  }
+
+  function stopGhostPlayback(){
+    ghostEnabled = false;
+    ghostReady = false;
+    ghostFrames = null;
+    ghostIdx = 0;
+    ghostRenderFrames = 0;
+    activeGhostLabel = '';
+  }
+
+  function queueGhostFeedback(label){
+    if(!label) return;
+    pendingGhostLabel = label; // keep latest incorrect sign only
+    if(ghostEnabled || loadingGhost) return;
+    startQueuedGhostFeedback();
+  }
+
+  function startQueuedGhostFeedback(){
+    if(ghostEnabled || loadingGhost || !pendingGhostLabel) return;
+    const labelToLoad = pendingGhostLabel;
+    pendingGhostLabel = '';
+    const normalizedClosest = normLabel(labelToLoad);
+
+    loadingGhost = true;
+    loadGhostFor(labelToLoad).then(ok => {
+      if(ok){
+        activeGhostLabel = normalizedClosest;
+        ghostEnabled = true;
+        ghostIdx = 0;
+        ghostRenderFrames = 0;
+      }
+    }).catch(e => {
+      console.error('Ghost load error', e);
+    }).finally(() => {
+      loadingGhost = false;
+      if(!ghostEnabled && pendingGhostLabel){
+        startQueuedGhostFeedback();
+      }
+    });
+  }
+
+  // Background preload: fetch ghost for a label and store in cache
+  function preloadGhostFor(label){
+    if(!label || _preloadBusy) return;
+    const cacheKey = normLabel(label);
+    if(_ghostCache.has(cacheKey)) return; // already cached
+    _preloadBusy = true;
+    _fetchGhostFrames(label).then(frames => {
+      if(frames) _ghostCache.set(cacheKey, frames);
+    }).catch(() => {}).finally(() => { _preloadBusy = false; });
+  }
+
+  function celebrate(){
+    if(!ENABLE_CONFETTI) return;
+    for(let i=0;i<30;i++){
+      setTimeout(()=>{
+        const confetti=document.createElement('div');
+        confetti.className='confetti';
+        confetti.style.left=Math.random()*100+'%';
+        confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
+        confetti.style.animationDelay=Math.random()*0.5+'s';
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(),3000);
+      },i*50);
+    }
+  }
+
+  function mainOnResults(res){
+    ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+    ctx.drawImage(videoEl,0,0,canvasEl.width,canvasEl.height);
+
+    // Person detection warnings
+    const pc = res.personCount;
+    if(pc !== undefined){
+      lastPersonCount = pc;
+      if(pc === 0){
+        personWarning.textContent = 'No one detected';
+        personWarning.style.display = 'block';
+      } else if(pc > 1){
+        personWarning.textContent = 'One person at a time please';
+        personWarning.style.display = 'block';
+      } else {
+        personWarning.style.display = 'none';
+      }
+    }
+    
+    // Update FPS counter
+    fpsFrameCount++;
+    const now=Date.now();
+    const delta=now-lastFrameTime;
+    if(delta>=500){
+      fpsValue=Math.round((fpsFrameCount*1000)/delta);
+      fpsCounter.textContent='FPS: '+fpsValue;
+      fpsFrameCount=0;
+      lastFrameTime=now;
+    }
+
+    const pose=res.poseLandmarks||[];
+    const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12)};
+    const rawDistanceM = estimateDistanceMeters(anchors, canvasEl.width);
+    const distanceM = smoothDistanceEstimate(rawDistanceM);
+    const distanceState = getDistanceGuideState(distanceM, pc);
+    drawDistanceGuide(distanceState, anchors);
+    refreshDistanceValueUi(distanceM, distanceState);
+    
+    const RH=res.rightHandLandmarks,LH=res.leftHandLandmarks;
+    handsPresent=!!(RH||LH);
+    if(showVisuals&&handsPresent){
+      const drawBox=(h,color)=>{
+        let minX=1,minY=1,maxX=0,maxY=0;
+        h.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+        ctx.strokeStyle=color;ctx.lineWidth=4;
+        ctx.strokeRect(minX*canvasEl.width,minY*canvasEl.height,(maxX-minX)*canvasEl.width,(maxY-minY)*canvasEl.height);
+        h.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvasEl.width,p.y*canvasEl.height,6,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();});
+      };
+      if(RH)drawBox(RH,'rgba(6,214,160,0.9)');
+      if(LH)drawBox(LH,'rgba(255,107,157,0.9)');
+    }
+
+    if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
+      ghostRenderFrames += 1;
+      const totalGhostFrames = GHOST_LOOP_FRAMES * GHOST_LOOP_REPEATS;
+      const clampedFrame = Math.min(ghostRenderFrames, totalGhostFrames);
+      const loopFrame = (clampedFrame - 1) % GHOST_LOOP_FRAMES;
+      const progress = Math.min(1, (loopFrame + 1) / GHOST_LOOP_FRAMES);
+      const maxIdx = Math.max(0, ghostFrames.length - 1);
+      const position = progress * maxIdx;
+      ghostIdx = position;
+
+      const idxA = Math.floor(ghostIdx);
+      const idxB = Math.min(idxA + 1, maxIdx);
+      const frameA=ghostFrames[idxA];
+      const frameB=ghostFrames[idxB];
+      const t=ghostIdx%1;
+
+      const L=frameA.L&&frameB.L?new Float32Array(63):null;
+      const R=frameA.R&&frameB.R?new Float32Array(63):null;
+
+      if(L){
+        for(let i=0;i<63;i++)L[i]=(1-t)*frameA.L[i]+t*frameB.L[i];
+      }
+      if(R){
+        for(let i=0;i<63;i++)R[i]=(1-t)*frameA.R[i]+t*frameB.R[i];
+      }
+
+      if(L)drawGhostHand(L,anchors,ctx,'rgba(167,139,250,0.85)');
+      if(R)drawGhostHand(R,anchors,ctx,'rgba(76,201,240,0.85)');
+      ghostBadge.style.display='inline-block';
+
+      if(ghostRenderFrames >= totalGhostFrames){
+        stopGhostPlayback();
+        if(pendingGhostLabel){
+          startQueuedGhostFeedback();
+        }
+      }
+    }else{
+      ghostRenderFrames=0;
+      ghostBadge.style.display='none';
+    }
+
+    const feat=packFeature(_displayLM);
+    if(running&&!feedbackActive&&feat){
+      // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
+      frameCount++;
+      if(frameCount % frameSkip === 0){
+        // Keep buffer at max size
+        if(buf.length<CAPTURE_MAX) buf.push(feat);
+        else { buf.shift(); buf.push(feat); }
+        frameInfo.textContent='Rolling window: '+Math.floor(buf.length)+'/'+CAPTURE_MAX+' frames';
+        frameInfo.style.display='block';
+        
+        const realtimeMode = toggleSpeed.checked;
+        if(realtimeMode && buf.length >= REALTIME_MIN_FRAMES){
+          const nowMs = Date.now();
+          if(!predicting && nowMs >= realtimeCooldownUntil && (nowMs - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS){
+            realtimeLastPredictMs = nowMs;
+            predict(true);
+          }
+        }
+      }
+    }
+  }
+  // Async server-side MediaPipe: camera renders at full speed,
+  // landmarks update in background whenever the server responds.
+  const _offCvs = document.createElement('canvas');
+  _offCvs.width = 320; _offCvs.height = 240;
+  const _offCtx = _offCvs.getContext('2d');
+  let _latestLM = {};
+  let _mpBusy = false;
+
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.30; // lower = stronger smoothing (reduces thumb jitter)
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
+  const camera=new Camera(videoEl,{onFrame:async()=>{
+    const _smoothed = _smoothLandmarks();
+    mainOnResults({
+      poseLandmarks:      _smoothed.poseLandmarks,
+      faceLandmarks:      _smoothed.faceLandmarks,
+      rightHandLandmarks: _smoothed.rightHandLandmarks,
+      leftHandLandmarks:  _smoothed.leftHandLandmarks,
+      personCount:        _smoothed.personCount
+    });
+    if(!_mpBusy){
+      _mpBusy=true;
+      _offCtx.drawImage(videoEl,0,0,320,240);
+      _offCvs.toBlob(function(blob){
+        fetch('/api/landmarks',{method:'POST',body:blob})
+          .then(function(r){return r.json();})
+          .then(function(lm){_latestLM=lm;})
+          .catch(function(){})
+          .finally(function(){_mpBusy=false;});
+      },'image/jpeg',0.6);
+    }
+  },width:480,height:360});
+
+async function predict(isRealtime=false){
+    if(predicting || feedbackActive) return; // Skip while in-flight or showing feedback
+    predicting = true;
+  try { await _doPredict(isRealtime); } finally { predicting = false; }
+}
+async function _doPredict(isRealtime=false){
+    // No hands detected OR hands detected but no person found
+    if(buf.length < 5 || lastPersonCount !== 1){
+      if(showResults){
+        const now = new Date().toLocaleTimeString();
+        const msg = buf.length < 5 ? 'No hands detected' : 'Hands detected but no person found';
+        const color = buf.length < 5 ? 'rgba(255,140,66,0.9)' : 'rgba(255,107,157,0.9)';
+        const colorVar = buf.length < 5 ? 'var(--orange)' : 'var(--pink)';
+        gestureOverlay.textContent = msg;
+        gestureOverlay.style.display = 'block';
+        gestureOverlay.style.background = color;
+        detLabel.textContent = '—';
+        detStatus.textContent = msg;
+
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom = '8px';
+        histEntry.style.padding = '8px';
+        histEntry.style.borderRadius = '8px';
+        histEntry.style.background = 'rgba(255,255,255,0.6)';
+        histEntry.innerHTML = `<strong style="color:${colorVar};">${now}</strong>: ${msg}`;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+          historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+      }
+      if(!isRealtime){
+        buf = [];
+        frameCount = 0;
+      }
+      return;
+    }
+
+    if(buf.length < 16){
+      if(showResults){
+        const now = new Date().toLocaleTimeString();
+        gestureOverlay.textContent = 'Too few frames, keep signing!';
+        gestureOverlay.style.display = 'block';
+        gestureOverlay.style.background = 'rgba(255,217,61,0.9)';
+        gestureOverlay.style.color = '#333';
+        detLabel.textContent = '—';
+        detStatus.textContent = `Only ${buf.length} frames captured`;
+
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom = '8px';
+        histEntry.style.padding = '8px';
+        histEntry.style.borderRadius = '8px';
+        histEntry.style.background = 'rgba(255,255,255,0.6)';
+        histEntry.innerHTML = `<strong style="color:var(--sunshine);">${now}</strong>: ⚠ Too few frames (${buf.length}/16)`;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+          historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+      }
+      buf = [];
+      frameCount = 0;
+      return;
+    }
+
+    const fixed = temporalFix(buf, SEQ_LEN);
+    const seq = fixed.flatMap(f => Array.from(f));
+
+    try{
+        const res = await fetch(PREDICT_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({sequence:seq, realtime:isRealtime})
+        });
+
+        const j = await res.json();
+        if(!showResults) return;
+
+        if(isRealtime){
+          const nowMs = Date.now();
+          const pred = (j.prediction || '').trim();
+          const isConcrete = !!pred &&
+            pred !== 'Incorrect' &&
+            pred !== 'No hands detected' &&
+            pred !== 'Not in FSL dataset' &&
+            pred !== 'Unrecognized Sign' &&
+            pred !== "Survival_Don't Understand" &&
+            pred !== 'Error';
+
+          if(!isConcrete){
+            realtimeStableLabel='';
+            realtimeStableHits=0;
+            detStatus.textContent='Reading next sign...';
+            return;
+          }
+
+          if(pred === realtimeStableLabel) realtimeStableHits += 1;
+          else {
+            realtimeStableLabel = pred;
+            realtimeStableHits = 1;
+          }
+
+          if(realtimeStableHits < REALTIME_STABLE_HITS){
+            detLabel.textContent = cleanLabel(pred) || '—';
+            detStatus.textContent = `Reading ${cleanLabel(pred) || 'sign'}...`;
+            return;
+          }
+
+          if(pred === realtimeLastCommittedLabel && nowMs < realtimeCooldownUntil){
+            return;
+          }
+
+          const now = new Date().toLocaleTimeString();
+          const histEntry = document.createElement('div');
+          histEntry.style.marginBottom='8px';
+          histEntry.style.padding='8px';
+          histEntry.style.borderRadius='8px';
+          histEntry.style.background='rgba(255,255,255,0.6)';
+          histEntry.innerHTML = `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(pred)||'—'}`;
+
+          if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+            historyEl.innerHTML='';
+          }
+          historyEl.insertBefore(histEntry, historyEl.firstChild);
+          historyEl.scrollTop = 0;
+
+          gestureOverlay.textContent = `✓ Great Job! ${cleanLabel(pred)||'—'}`;
+          gestureOverlay.style.display='block';
+          gestureOverlay.style.background='rgba(6,214,160,0.9)';
+          detLabel.textContent = cleanLabel(pred)||'—';
+          detStatus.textContent = 'Correct! Keep going!';
+          celebrate();
+
+          pendingGhostLabel='';
+          ghostBadge.style.display='none';
+          preloadGhostFor(pred);
+
+          await saveResult(pred, j.confidence ?? null);
+
+          realtimeLastCommittedLabel = pred;
+          realtimeCooldownUntil = nowMs + REALTIME_COMMIT_COOLDOWN_MS;
+          realtimeStableHits = 0;
+          buf = [];
+          frameCount = 0;
+          feedbackActive = true;
+          setTimeout(() => {
+            feedbackActive = false;
+            if(showResults) gestureOverlay.style.display='none';
+          }, 650);
+          return;
+        }
+
+        const now = new Date().toLocaleTimeString();
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom='8px';
+        histEntry.style.padding='8px';
+        histEntry.style.borderRadius='8px';
+        histEntry.style.background='rgba(255,255,255,0.6)';
+
+        if(j.prediction==='No hands detected' || j.message==='No hands detected'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--orange);">${now}</strong>: No hands detected`;
+            gestureOverlay.textContent = 'No hands detected';
+            gestureOverlay.style.display = 'block';
+            gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
+            detLabel.textContent = '—';
+            detStatus.textContent = 'No hands detected';
+
+        }else if(j.prediction==='Not in FSL dataset'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--lavender);">${now}</strong>: ❓ Not in FSL dataset`;
+            gestureOverlay.textContent = 'Not in FSL dataset';
+            gestureOverlay.style.display = 'block';
+            gestureOverlay.style.background = 'rgba(167,139,250,0.9)';
+            detLabel.textContent = '—';
+            detStatus.textContent = 'Sign not recognized in FSL';
+
+        }else if(j.prediction==='Incorrect'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;
+
+            gestureOverlay.textContent =
+                `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(255,107,157,0.9)';
+
+            detLabel.textContent = cleanLabel(j.closest_sign)||'—';
+            detStatus.textContent = 'Try again!';
+
+            if(j.closest_sign){
+              queueGhostFeedback(j.closest_sign);
+            }
+
+        }else{
+            if(j.prediction==="Survival_Don't Understand"){
+              histEntry.innerHTML = `<strong style="color:var(--coral);">${now}</strong>: ❓ Unrecognized sign, please try again.`;
+              gestureOverlay.textContent = 'Unrecognized sign, please try again.';
+              gestureOverlay.style.display='block';
+              gestureOverlay.style.background='rgba(255,107,157,0.9)';
+              detLabel.textContent = '—';
+              detStatus.textContent = 'Unrecognized sign';
+            }else{
+              histEntry.innerHTML = `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(j.prediction)||'—'}`;
+              gestureOverlay.textContent = `✓ Great Job! ${cleanLabel(j.prediction)||'—'}`;
+              gestureOverlay.style.display='block';
+              gestureOverlay.style.background='rgba(6,214,160,0.9)';
+              detLabel.textContent = cleanLabel(j.prediction)||'—';
+              detStatus.textContent = 'Correct! Keep going!';
+              celebrate();
+              // Do not interrupt an active ghost cycle; clear only pending queue.
+              if(!ghostEnabled){
+                stopGhostPlayback();
+              }
+              pendingGhostLabel='';
+              ghostBadge.style.display='none';
+              // Preload ghost in background for this sign (in case user tries again)
+              preloadGhostFor(j.prediction);
+            }
+        }
+
+        if(!isRealtime){
+          if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+            historyEl.innerHTML='';
+          }
+          historyEl.insertBefore(histEntry, historyEl.firstChild);
+          historyEl.scrollTop = 0;
+        }
+
+        if(!isRealtime){
+          // Pause accumulation while feedback shows, then start fresh
+          feedbackActive = true;
+          setTimeout(() => {
+            feedbackActive = false;
+            buf = [];
+            frameCount = 0;
+            if(showResults) gestureOverlay.style.display = 'none';
+          }, 3000);
+        }
+
+    }catch(e){
+        console.error(e);
+        gestureOverlay.textContent='⚠️ Oops! Try again';
+        gestureOverlay.style.display='block';
+        gestureOverlay.style.background='rgba(255,140,66,0.9)';
+        detStatus.textContent='Connection error';
+    }
+
+    // 🔥 CRITICAL RESET — TRUE WINDOW MODE
+    if(!isRealtime){
+      buf = [];
+      frameCount = 0;
+    }
+}
+
+  toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
+  toggleTimer.onchange=()=>{
+    showTimer=toggleTimer.checked;
+    if(toggleSpeed.checked){
+      timerOverlay.style.display='none';
+      return;
+    }
+    timerOverlay.style.display=showTimer?'block':'none';
+  };
+  toggleResults.onchange=()=>{showResults=toggleResults.checked;gestureOverlay.style.display=showResults?'block':'none';};
+
+  function applyTimerOverlayStyle(value){
+    if(value <= 1) timerOverlay.style.background='var(--coral)';
+    else if(value <= 2) timerOverlay.style.background='var(--orange)';
+    else timerOverlay.style.background='var(--sunshine)';
+  }
+
+  function stopCountdownLoop(){
+    if(tickInterval){
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+  }
+
+  function startCountdownLoop(){
+    stopCountdownLoop();
+    countdown = 5;
+    timerOverlay.textContent = countdown;
+    applyTimerOverlayStyle(countdown);
+    timerOverlay.style.display = showTimer ? 'block' : 'none';
+
+    tickInterval = setInterval(() => {
+      countdown--;
+      timerOverlay.textContent = countdown;
+      applyTimerOverlayStyle(countdown);
+
+      if(countdown <= 0){
+        predict();
+        countdown = 5;
+        timerOverlay.textContent = countdown;
+        applyTimerOverlayStyle(countdown);
+      }
+    }, 1000);
+  }
+
+  function applyAutoMode(){
+    if(!running) return;
+    const realtimeMode = toggleSpeed.checked;
+
+    if(realtimeMode){
+      stopCountdownLoop();
+      timerOverlay.style.display = 'none';
+      frameInfo.textContent = 'Real-time mode: predicting at 48 frames';
+    }else{
+      startCountdownLoop();
+    }
+  }
+
+  toggleSpeed.onchange=()=>{ applyAutoMode(); };
+
+  startBtn.onclick=async()=>{
+    document.body.classList.add('camera-running');
+    if(running)return;
+    running=true;
+    smoothedDistanceM=null;
+    buf=[];
+    frameCount=0;
+    realtimeLastPredictMs=0;
+    realtimeStableLabel='';
+    realtimeStableHits=0;
+    realtimeLastCommittedLabel='';
+    realtimeCooldownUntil=0;
+    recBadge.style.display='inline-block';
+    stateBadge.textContent='Learning Mode ON! 🎓';
+    stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';
+    await camera.start();
+    startBtn.style.display='none';
+    stopBtn.style.display='inline-block';
+
+    applyAutoMode();
+  };
+
+  stopBtn.onclick=async()=>{
+    document.body.classList.remove('camera-running');
+    running=false;
+    feedbackActive=false;
+    recBadge.style.display='none';
+    stateBadge.textContent='Ready to Learn!';
+    stateBadge.style.background='linear-gradient(135deg, var(--grass-green), var(--sky-blue))';
+    stopCountdownLoop();
+    timerOverlay.style.display='none';
+    gestureOverlay.style.display='none';
+    frameInfo.style.display='none';
+    detLabel.textContent='—';
+    detStatus.textContent='Ready to start!';
+    smoothedDistanceM=null;
+    realtimeStableLabel='';
+    realtimeStableHits=0;
+    realtimeLastCommittedLabel='';
+    realtimeCooldownUntil=0;
+    stopGhostPlayback();
+    pendingGhostLabel='';
+    ghostBadge.style.display='none';
+    try{await camera.stop();}catch(_){}
+    stopBtn.style.display='none';startBtn.style.display='inline-block';
+  };
+
+  clearBtn.onclick=()=>{historyEl.innerHTML='<div style="color: #999;">Start signing to see your progress!</div>';};
+
+  function resize(){canvasEl.width=videoEl.clientWidth;canvasEl.height=videoEl.clientHeight;}
+  new ResizeObserver(resize).observe(videoEl);resize();
+
+  setTimeout(() => {
+    if (!running) startBtn.click();
+  }, 0);
+})();
+</script>
+
+{% endblock %}

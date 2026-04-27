@@ -1,0 +1,1162 @@
+{% extends "base.html" %}
+{% block title %}Results – FSL Learning{% endblock %}
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+  }
+
+  .shape:nth-child(1) {
+    width: 120px;
+    height: 120px;
+    background: var(--sunshine);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%;
+    left: 5%;
+  }
+
+  .shape:nth-child(2) {
+    width: 90px;
+    height: 90px;
+    background: var(--coral);
+    border-radius: 50%;
+    top: 60%;
+    left: 80%;
+  }
+
+  .shape:nth-child(3) {
+    width: 150px;
+    height: 150px;
+    background: var(--grass-green);
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%;
+    right: 10%;
+  }
+
+  .shape:nth-child(4) {
+    width: 100px;
+    height: 100px;
+    background: var(--lavender);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%;
+    right: 20%;
+  }
+
+  .app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: calc(100vh - 72px);
+    min-height: calc(100vh - 72px);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 64px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 8px 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: #666;
+    margin-top: 1px;
+    font-weight: 600;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .status-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(6, 214, 160, 0.3);
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    min-height: 36px;
+    color: var(--white);
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+
+  .btn.primary {
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 2px 8px var(--shadow);
+    padding: 10px;
+  }
+
+  .stat .k {
+    font-size: 11px;
+    color: #888;
+    font-weight: 800;
+  }
+
+  .stat .v {
+    font-size: 24px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .left-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-column: 1 / span 2;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .right-stack {
+    display: flex;
+    flex-direction: column;
+    grid-column: 3;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px var(--shadow);
+    padding: 12px 14px;
+    min-height: 0;
+  }
+
+  .latest-card,
+  .daily-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .right-stack > .card {
+    min-height: 0;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #666;
+    margin-bottom: 6px;
+  }
+
+  .mini {
+    font-size: 13px;
+    color: #64748B;
+    font-weight: 700;
+  }
+
+  .common-band {
+    margin-top: 8px;
+    background: rgba(250, 250, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.75);
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .common-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  #statCommon {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #334155;
+    line-height: 1.2;
+  }
+
+  .assessment {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .category-card .assessment {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .assess-box {
+    flex: 1;
+    background: rgba(250, 250, 255, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.75);
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .assess-title {
+    font-size: 12px;
+    font-weight: 900;
+    color: #666;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+
+  .assess-main {
+    font-size: 18px;
+    font-weight: 900;
+    color: #334155;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  .assess-meta {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: 800;
+  }
+
+  .table-wrap {
+    background: var(--off-white);
+    border-radius: 8px;
+    padding: 4px;
+    border: 2px solid #E0E0E0;
+    overflow: auto;
+    max-height: 250px;
+  }
+
+  .latest-card .table-wrap,
+  .daily-card .table-wrap {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .latest-card th,
+  .latest-card td,
+  .daily-card th,
+  .daily-card td {
+    white-space: nowrap;
+  }
+
+  .latest-card th:nth-child(1),
+  .latest-card td:nth-child(1) {
+    width: 95px;
+  }
+
+  .latest-card th:nth-child(2),
+  .latest-card td:nth-child(2) {
+    width: 86px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 7px 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, .06);
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, .9);
+    backdrop-filter: blur(8px);
+    font-weight: 900;
+    color: #666;
+    z-index: 2;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  .pill.ok {
+    background: rgba(6, 214, 160, .15);
+    color: #057a61;
+  }
+
+  .pill.bad {
+    background: rgba(255, 107, 157, .15);
+    color: #b0234c;
+  }
+
+  .empty {
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .75);
+    border: 1px dashed #DDD;
+    color: #777;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  @media(max-width:1024px) {
+    .grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+    }
+
+    .left-pair {
+      grid-template-columns: 1fr;
+    }
+
+    .stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .header-controls {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .latest-card .table-wrap,
+    .daily-card .table-wrap {
+      max-height: 280px;
+    }
+  }
+
+  @media(max-width:768px) {
+    .app-container {
+      height: calc(100vh - 72px);
+      min-height: calc(100vh - 72px);
+      padding: 6px 10px 64px;
+      gap: 8px;
+    }
+  }
+
+  @media(max-width:560px) {
+    .stats-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* PDF Export Modal */
+  .pdf-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(9, 20, 40, 0.42); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; }
+  .pdf-modal-overlay.active { display: flex; }
+  .pdf-modal { background: #fff; border-radius: 18px; padding: 24px 24px; box-shadow: 0 20px 44px rgba(0, 0, 0, 0.25); text-align: center; max-width: 360px; width: 90%; animation: modalPop .24s ease; }
+  @keyframes modalPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .pdf-modal h3 { font-size: 18px; font-weight: 900; color: #22324f; margin-bottom: 6px; }
+  .pdf-modal p { font-size: 13px; color: #61708f; font-weight: 700; margin-bottom: 16px; }
+  .pdf-modal .modal-btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; color: #fff; cursor: pointer; margin-bottom: 10px; box-shadow: 0 7px 14px rgba(24, 62, 129, 0.2); }
+  .pdf-modal .modal-btn.today { background: linear-gradient(135deg, var(--deep-blue), var(--lavender)); }
+  .pdf-modal .modal-btn.history { background: linear-gradient(135deg, var(--orange), var(--sunshine)); }
+  .pdf-modal .modal-cancel { display: inline-block; margin-top: 2px; font-size: 13px; color: #8a98b5; font-weight: 800; cursor: pointer; border: none; background: none; }
+  .pdf-modal .modal-cancel:hover { color: #5f6f93; }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div><div class="shape"></div><div class="shape"></div><div class="shape"></div>
+</div>
+
+<!-- PDF Export Modal -->
+<div class="pdf-modal-overlay" id="pdfModal">
+  <div class="pdf-modal">
+    <h3>Export PDF</h3>
+    <p>Choose the data range to include:</p>
+    <button class="modal-btn today" id="pdfToday">Today only</button>
+    <button class="modal-btn history" id="pdfHistory">Full history</button>
+    <button class="modal-cancel" id="pdfCancel">Cancel</button>
+  </div>
+</div>
+
+<div class="app-container">
+  <div class="header">
+    <div>
+      <div class="logo">Results</div>
+      <div class="sub">Progress & history for {{ session.get('username','student') }}</div>
+    </div>
+    <div class="header-controls">
+      <div class="status-badge" id="todayBadge">Loading...</div>
+      <button class="btn primary" id="exportBtn" type="button">Export Results (PDF)</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="k">Total attempts</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">Correct</div><div class="v" id="statCorrect">0</div></div>
+    <div class="stat"><div class="k">Incorrect</div><div class="v" id="statIncorrect">0</div></div>
+    <div class="stat"><div class="k">Streak (days)</div><div class="v" id="statStreak">0</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="left-pair">
+      <div class="card latest-card">
+        <div class="card-title">Latest attempts</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:110px;">Date</th>
+                <th style="width:90px;">Time</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="3"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card daily-card">
+        <div class="card-title">Daily activity (last 14 days)</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:100px;">Date</th><th>Attempts</th><th>Correct</th><th>Incorrect</th></tr></thead>
+            <tbody id="dailyBody">
+              <tr><td colspan="4"><div class="empty">No daily data yet.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">Today summary</div>
+        <div class="mini" id="todaySummary">—</div>
+        <div class="common-band">
+          <div class="common-label">Most common</div>
+          <div id="statCommon">—</div>
+        </div>
+      </div>
+
+      <div class="card category-card">
+        <div class="card-title">Category Assessment - Current Session</div>
+        <div class="assessment">
+          <div class="assess-box">
+            <div class="assess-title">Needs most practice</div>
+            <div class="assess-main" id="curStruggleText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curStruggleStats">—</div>
+          </div>
+          <div class="assess-box">
+            <div class="assess-title">Your best category</div>
+            <div class="assess-main" id="curBestText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curBestStats">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const raw = {{ (db_results_json or '[]')|safe }};
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
+
+  // Normalize to device-local time for display/grouping.
+  // DB values are timezone-naive, but are produced from server clock and behave like UTC.
+  // So: timezone-aware strings => native Date parse; naive strings => force UTC parse.
+  const parseLocalDateTime = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return isNaN(value) ? null : value;
+    const s = String(value).trim();
+    if (/(Z|[+-]\d{2}:\d{2})$/i.test(s)) {
+      const zoned = new Date(s);
+      return isNaN(zoned) ? null : zoned;
+    }
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const d = Number(m[3]);
+      const h = Number(m[4]);
+      const mi = Number(m[5]);
+      const se = Number(m[6] || 0);
+      const utc = new Date(Date.UTC(y, mo, d, h, mi, se));
+      if (!isNaN(utc)) return utc;
+    }
+    const fallback = new Date(s);
+    return isNaN(fallback) ? null : fallback;
+  };
+
+  const fmtTime = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = parseLocalDateTime(iso);
+      if(!d) return '—';
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }catch(e){return '—';}
+  };
+  const fmtDate = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = parseLocalDateTime(iso);
+      if(!d) return '—';
+      return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
+    }catch(e){return '—';}
+  };
+  const fmtDateShort = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = parseLocalDateTime(iso);
+      if(!d) return '—';
+      return d.toLocaleDateString(undefined, {month:'short', day:'2-digit'});
+    }catch(e){return '—';}
+  };
+  const dateKey = (iso) => {
+    if(!iso) return null;
+    const d = parseLocalDateTime(iso);
+    if(isNaN(d)) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  };
+  const isIncorrectLabel = (label) => {
+    if(!label) return true;
+    const s = String(label).trim().toLowerCase();
+    return s === 'incorrect'
+      || s.startsWith('incorrect|')
+      || s.startsWith('incorrect:')
+      || s.startsWith('incorrect_')
+      || s === 'not in fsl dataset'
+      || s === 'no hands detected'
+      || s === 'unrecognized sign'
+      || s === 'error';
+  };
+
+  const isCorrect = (label) => !isIncorrectLabel(label);
+
+  function categoryTitle(cat){
+    if(!cat) return 'Unknown';
+    return String(cat).charAt(0).toUpperCase() + String(cat).slice(1).toLowerCase();
+  }
+
+  function inferCategory(label){
+    if(!label) return null;
+    const raw = String(label).trim();
+    const low = raw.toLowerCase();
+
+    // Supports richer incorrect labels saved as: Incorrect|category or Incorrect:category
+    const incorrectMatch = low.match(/^incorrect[|:_-]([a-z]+)/);
+    if(incorrectMatch && incorrectMatch[1]) return incorrectMatch[1];
+
+    if(low.startsWith('numbers_')) return 'numbers';
+    if(low.startsWith('colors_') || low.startsWith('color_')) return 'colors';
+    if(low.startsWith('family_')) return 'family';
+    if(low.startsWith('relationship_')) return 'relationship';
+    if(low.startsWith('survival_')) return 'survival';
+
+    const cleaned = low.replace(/[^a-z0-9]+/g, '');
+    const numbers = new Set(['one','two','three','four','five','1','2','3','4','5']);
+    const family = new Set(['daughter','father','grandfather','grandmother','mother','son']);
+    const relationship = new Set(['boy','girl']);
+    const survival = new Set(['correct','no','understand','wrong','yes']);
+    const colors = new Set(['black','blue','green','orange','pink','red','white','yellow']);
+
+    if(numbers.has(cleaned)) return 'numbers';
+    if(family.has(cleaned)) return 'family';
+    if(relationship.has(cleaned)) return 'relationship';
+    if(survival.has(cleaned)) return 'survival';
+    if(colors.has(cleaned)) return 'colors';
+    return null;
+  }
+
+  /* Clean label: strip category prefix & underscores for display */
+  function cleanLabel(raw) {
+    if (!raw) return '—';
+    let s = String(raw);
+    s = s.replace(/^(Color|Colors|Number|Numbers|Family|Relationship|Survival|Signs?)_/i, '');
+    s = s.replace(/_/g, ' ');
+    s = s.replace(/\b\w/g, c => c.toUpperCase());
+    return s;
+  }
+
+  // Build log table
+  const logBody = document.getElementById('logBody');
+  const dailyBody = document.getElementById('dailyBody');
+
+  const statTotal = document.getElementById('statTotal');
+  const statCorrect = document.getElementById('statCorrect');
+  const statIncorrect = document.getElementById('statIncorrect');
+  const statStreak = document.getElementById('statStreak');
+  const statCommon = document.getElementById('statCommon');
+  const todayBadge = document.getElementById('todayBadge');
+  const todaySummary = document.getElementById('todaySummary');
+  const curStruggleText = document.getElementById('curStruggleText');
+  const curStruggleStats = document.getElementById('curStruggleStats');
+  const curBestText = document.getElementById('curBestText');
+  const curBestStats = document.getElementById('curBestStats');
+
+  const exportBtn = document.getElementById('exportBtn');
+  // Optional: clear button can be added later with a server endpoint.
+
+  const rows = Array.isArray(raw) ? raw : [];
+  let currentSessionRows = [];
+  try {
+    const rawSession = sessionStorage.getItem(CURRENT_SESSION_KEY);
+    const parsed = rawSession ? JSON.parse(rawSession) : [];
+    currentSessionRows = Array.isArray(parsed) ? parsed : [];
+  } catch (_e) {
+    currentSessionRows = [];
+  }
+
+  const total = rows.length;
+  const correct = rows.filter(r => isCorrect(r.label)).length;
+  const incorrect = total - correct;
+
+  statTotal.textContent = total;
+  statCorrect.textContent = correct;
+  statIncorrect.textContent = incorrect;
+
+  // Latest log
+  if(total){
+    logBody.innerHTML = '';
+    rows.slice(0,200).forEach(r => {
+      const tr = document.createElement('tr');
+      const ok = isCorrect(r.label);
+      const pill = ok
+        ? `<span class="pill ok">✓ ${escapeHtml(cleanLabel(r.label))}</span>`
+        : `<span class="pill bad">✗ Incorrect</span>`;
+      tr.innerHTML = `
+        <td>${fmtDateShort(r.created_at)}</td>
+        <td>${fmtTime(r.created_at)}</td>
+        <td>${pill}</td>
+      `;
+      logBody.appendChild(tr);
+    });
+  }
+
+  // Daily aggregation (14 days)
+  const byDay = new Map();
+  const byDayCorrect = new Map();
+  const byDayIncorrect = new Map();
+  const todayK = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  })();
+
+  const labelCountsToday = new Map();
+  rows.forEach(r => {
+    const k = dateKey(r.created_at);
+    if(!k) return;
+    byDay.set(k, (byDay.get(k)||0)+1);
+
+    if(isCorrect(r.label)){
+      byDayCorrect.set(k, (byDayCorrect.get(k)||0)+1);
+    }else{
+      byDayIncorrect.set(k, (byDayIncorrect.get(k)||0)+1);
+    }
+
+    if(k===todayK){
+      const lab = String(r.label||'—');
+      labelCountsToday.set(lab, (labelCountsToday.get(lab)||0)+1);
+    }
+  });
+
+  // Render last 14 days table (including days with 0)
+  const days = [];
+  for(let i=0;i<14;i++){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const k = `${y}-${m}-${day}`;
+    days.push({k, label: d.toLocaleDateString(undefined,{month:'short',day:'2-digit'})});
+  }
+
+  dailyBody.innerHTML = '';
+  days.forEach(({k,label}) => {
+    const a = byDay.get(k)||0;
+    const c = byDayCorrect.get(k)||0;
+    const ic = byDayIncorrect.get(k)||0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${label}</td><td>${a}</td><td>${c}</td><td>${ic}</td>`;
+    dailyBody.appendChild(tr);
+  });
+
+  // Streak: count consecutive days back from today with any attempts
+  let streak=0;
+  for(let i=0;i<365;i++){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const k = `${y}-${m}-${day}`;
+    if((byDay.get(k)||0) > 0) streak++;
+    else break;
+  }
+  statStreak.textContent = streak;
+
+  // Today summary
+  const todayAttempts = byDay.get(todayK)||0;
+  const todayCorrect = byDayCorrect.get(todayK)||0;
+  const todayIncorrect = byDayIncorrect.get(todayK)||0;
+  todayBadge.textContent = todayAttempts ? `Today: ${todayCorrect}✓ / ${todayIncorrect}✗` : 'No attempts today';
+
+  const mostCommon = (() => {
+    let best=null, bestN=0;
+    for(const [lab,n] of labelCountsToday.entries()){
+      if(n>bestN){bestN=n;best=lab;}
+    }
+    return best;
+  })();
+
+  statCommon.textContent = mostCommon ? cleanLabel(mostCommon) : '—';
+  todaySummary.textContent = todayAttempts
+    ? `You made ${todayAttempts} attempts today. Keep going!`
+    : `No entries today yet. Do a few reps in Select or Activity.`;
+
+  function renderCategoryAssessment(sourceRows, struggleEl, struggleStatsEl, bestEl, bestStatsEl, emptyMsg) {
+    const categoryStats = new Map();
+    sourceRows.forEach(r => {
+      const cat = inferCategory(r.label);
+      if(!cat) return;
+      if(!categoryStats.has(cat)){
+        categoryStats.set(cat, {attempts:0, correct:0, incorrect:0});
+      }
+      const entry = categoryStats.get(cat);
+      entry.attempts += 1;
+      if(isCorrect(r.label)) entry.correct += 1;
+      else entry.incorrect += 1;
+    });
+
+    const categories = Array.from(categoryStats.entries()).map(([name,stats]) => ({
+      name,
+      ...stats,
+      accuracy: stats.attempts ? (stats.correct / stats.attempts) : 0
+    }));
+
+    if(!categories.length){
+      struggleEl.textContent = emptyMsg;
+      struggleStatsEl.textContent = '—';
+      bestEl.textContent = emptyMsg;
+      bestStatsEl.textContent = '—';
+      return;
+    }
+
+    const weakest = [...categories].sort((a,b) => {
+      if(a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
+      return b.attempts - a.attempts;
+    })[0];
+    const strongest = [...categories].sort((a,b) => {
+      if(a.accuracy !== b.accuracy) return b.accuracy - a.accuracy;
+      return b.attempts - a.attempts;
+    })[0];
+
+    struggleEl.textContent = `You struggle most with ${categoryTitle(weakest.name)} gestures.`;
+    struggleStatsEl.textContent = `Correct: ${weakest.correct} · Incorrect: ${weakest.incorrect} · Accuracy: ${(weakest.accuracy*100).toFixed(1)}%`;
+
+    bestEl.textContent = `You are best at ${categoryTitle(strongest.name)} gestures.`;
+    bestStatsEl.textContent = `Correct: ${strongest.correct} · Incorrect: ${strongest.incorrect} · Accuracy: ${(strongest.accuracy*100).toFixed(1)}%`;
+  }
+
+  renderCategoryAssessment(
+    currentSessionRows,
+    curStruggleText,
+    curStruggleStats,
+    curBestText,
+    curBestStats,
+    'No current session attempts yet.'
+  );
+
+  /* ── PDF Modal Logic ── */
+  const pdfModal = document.getElementById('pdfModal');
+  const pdfToday = document.getElementById('pdfToday');
+  const pdfHistory = document.getElementById('pdfHistory');
+  const pdfCancel = document.getElementById('pdfCancel');
+
+  exportBtn.onclick = () => { pdfModal.classList.add('active'); };
+  pdfCancel.onclick = () => { pdfModal.classList.remove('active'); };
+  pdfModal.onclick = (e) => { if(e.target===pdfModal) pdfModal.classList.remove('active'); };
+
+  function generatePDF(mode) {
+    pdfModal.classList.remove('active');
+    const script = document.createElement('script');
+    script.src = '{{ url_for("static", filename="vendor/html2pdf.bundle.min.js") }}';
+    script.onload = () => {
+      const isTodayMode = mode === 'today';
+      const todayRows = rows.filter(r => dateKey(r.created_at) === todayK);
+      const fullRows = rows.slice();
+      const dataRows = isTodayMode ? todayRows : fullRows;
+      const username = escapeHtml('{{ session.get("username","student") }}');
+      const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const genDate = new Date().toLocaleString();
+      const genDateShort = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const modeSlug = isTodayMode ? 'today-only' : 'full-history';
+
+      const pdfTotal = dataRows.length;
+      const pdfCorrect = dataRows.filter(r => isCorrect(r.label)).length;
+      const pdfIncorrect = pdfTotal - pdfCorrect;
+      const successRate = pdfTotal === 0 ? '—' : (pdfCorrect / pdfTotal * 100).toFixed(1) + '%';
+      const modeLabel = isTodayMode ? 'Today Only' : 'Full History';
+
+      /* ── Clean label: strip category prefix & underscores ── */
+      function cleanLabel(raw) {
+        if (!raw) return '—';
+        let s = String(raw);
+        // Strip prefixes like "Color_", "Numbers_", "Family_", "Relationship_", "Survival_"
+        s = s.replace(/^(Color|Colors|Number|Numbers|Family|Relationship|Survival|Signs?)_/i, '');
+        // Replace remaining underscores with spaces
+        s = s.replace(/_/g, ' ');
+        // Title-case each word
+        s = s.replace(/\b\w/g, c => c.toUpperCase());
+        return s;
+      }
+
+      /* ── Build daily activity table (scoped to mode) ── */
+      const pdfByDay = new Map();
+      const pdfByDayCorrect = new Map();
+      const pdfByDayIncorrect = new Map();
+      dataRows.forEach(r => {
+        const k = dateKey(r.created_at); if(!k) return;
+        pdfByDay.set(k, (pdfByDay.get(k)||0)+1);
+        if(isCorrect(r.label)) pdfByDayCorrect.set(k, (pdfByDayCorrect.get(k)||0)+1);
+        else pdfByDayIncorrect.set(k, (pdfByDayIncorrect.get(k)||0)+1);
+      });
+      const allDailyKeys = Array.from(pdfByDay.keys()).sort();
+      const firstDay = allDailyKeys.length ? allDailyKeys[0] : genDateShort;
+      const lastDay  = allDailyKeys.length ? allDailyKeys[allDailyKeys.length - 1] : genDateShort;
+
+      const fullDays = [];
+      if (allDailyKeys.length) {
+        const cur = new Date(firstDay + 'T00:00:00');
+        const end = new Date(lastDay  + 'T00:00:00');
+        while (cur <= end) {
+          const y = cur.getFullYear();
+          const m = String(cur.getMonth()+1).padStart(2,'0');
+          const d = String(cur.getDate()).padStart(2,'0');
+          fullDays.push(y+'-'+m+'-'+d);
+          cur.setDate(cur.getDate()+1);
+        }
+      }
+
+      const dailyRowsHtml = fullDays.map((k, i) => {
+        const a = pdfByDay.get(k) || 0;
+        const c = pdfByDayCorrect.get(k) || 0;
+        const ic = pdfByDayIncorrect.get(k) || 0;
+        const rate = a > 0 ? (c/a*100).toFixed(0)+'%' : '—';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        const dateLabel = new Date(k+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit',weekday:'short'});
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#334155;">'+dateLabel+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+a+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#059669;">'+c+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#DC2626;">'+ic+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;font-weight:600;">'+rate+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Per-sign breakdown ── */
+      const signCounts = new Map();
+      const signCorrect = new Map();
+      dataRows.forEach(r => {
+        if (!r.label) return;
+        const lab = cleanLabel(r.label);
+        if (String(r.label) === 'Incorrect') return;
+        signCounts.set(lab, (signCounts.get(lab)||0) + 1);
+      });
+      dataRows.forEach(r => {
+        if (!isCorrect(r.label)) return;
+        const lab = cleanLabel(r.label);
+        signCorrect.set(lab, (signCorrect.get(lab)||0) + 1);
+      });
+      const signKeys = Array.from(signCounts.keys()).sort((a,b) => signCounts.get(b) - signCounts.get(a));
+      const signRowsHtml = signKeys.map((lab, i) => {
+        const att = signCounts.get(lab) || 0;
+        const cor = signCorrect.get(lab) || 0;
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;font-weight:600;color:#334155;">'+escapeHtml(lab)+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+att+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#059669;">'+cor+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+(att>0?(cor/att*100).toFixed(0)+'%':'—')+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Full attempt log ── */
+      const attemptRowsHtml = dataRows.map((r, i) => {
+        const ok = isCorrect(r.label);
+        const label = ok ? cleanLabel(r.label) : 'Incorrect';
+        const result = ok ? '✓ ' + escapeHtml(label) : '✗ Incorrect';
+        const resultColor = ok ? '#059669' : '#DC2626';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        const d = parseLocalDateTime(r.created_at);
+        const datetime = d ? d.toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#64748B;">'+datetime+'</td>' +
+          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;font-weight:700;color:'+resultColor+';">'+result+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Academic compact report style ── */
+      const TH = 'padding:6px 8px;border:1px solid #9CA3AF;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;background:#EEF2F7;color:#111827;';
+      const TD = 'padding:5px 8px;border:1px solid #D1D5DB;font-size:10px;color:#111827;';
+
+      const topSignRowsHtml = signKeys.slice(0, 15).map((lab, i) => {
+        const att = signCounts.get(lab) || 0;
+        const cor = signCorrect.get(lab) || 0;
+        const acc = att > 0 ? (cor / att * 100).toFixed(1) + '%' : '—';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="'+TD+'font-weight:600;">'+escapeHtml(lab)+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+att+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+cor+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+acc+'</td>' +
+          '</tr>';
+      }).join('');
+
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="font-family:'Times New Roman', Georgia, serif;color:#111827;padding:0 0 4px 0;line-height:1.25;">
+          <div style="padding:8px 10px 4px;border-bottom:2px solid #1F2937;">
+            <div style="font-size:16px;font-weight:700;text-align:center;letter-spacing:.02em;">FILIPINO SIGN LANGUAGE LEARNING SYSTEM</div>
+            <div style="font-size:12px;font-weight:700;text-align:center;margin-top:2px;">Academic Progress Report (${modeLabel})</div>
+            <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+              <tr>
+                <td style="${TD}width:18%;font-weight:700;background:#F3F4F6;">Student</td>
+                <td style="${TD}width:32%;">${username}</td>
+                <td style="${TD}width:18%;font-weight:700;background:#F3F4F6;">Generated</td>
+                <td style="${TD}width:32%;">${genDate}</td>
+              </tr>
+              <tr>
+                <td style="${TD}font-weight:700;background:#F3F4F6;">Coverage</td>
+                <td style="${TD}">${firstDay} to ${lastDay}</td>
+                <td style="${TD}font-weight:700;background:#F3F4F6;">Streak</td>
+                <td style="${TD}">${streak} day(s)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">I. Summary Statistics</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;">Metric</th>
+                  <th style="${TH}text-align:center;width:20%;">Value</th>
+                  <th style="${TH}text-align:left;">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="${TD}font-weight:600;">Total Attempts</td><td style="${TD}text-align:center;">${pdfTotal}</td><td style="${TD}">Recorded attempts in selected range.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Correct Attempts</td><td style="${TD}text-align:center;">${pdfCorrect}</td><td style="${TD}">Classified as correct by model logic.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Incorrect Attempts</td><td style="${TD}text-align:center;">${pdfIncorrect}</td><td style="${TD}">Includes incorrect and unrecognized outputs.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Accuracy</td><td style="${TD}text-align:center;">${successRate}</td><td style="${TD}">Accuracy = correct / total attempts.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">II. Daily Activity</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;">Date</th>
+                  <th style="${TH}text-align:center;width:14%;">Attempts</th>
+                  <th style="${TH}text-align:center;width:14%;">Correct</th>
+                  <th style="${TH}text-align:center;width:14%;">Incorrect</th>
+                  <th style="${TH}text-align:center;width:16%;">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>${dailyRowsHtml || '<tr><td colspan="5" style="'+TD+'text-align:center;">No daily activity recorded yet.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">III. Sign Performance Breakdown</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;">Sign Label</th>
+                  <th style="${TH}text-align:center;width:14%;">Attempts</th>
+                  <th style="${TH}text-align:center;width:14%;">Correct</th>
+                  <th style="${TH}text-align:center;width:16%;">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>${topSignRowsHtml || '<tr><td colspan="4" style="'+TD+'text-align:center;">No sign breakdown available.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">IV. Detailed Attempt Log</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;width:34%;">Date and Time</th>
+                  <th style="${TH}text-align:left;">Result</th>
+                </tr>
+              </thead>
+              <tbody>${attemptRowsHtml || '<tr><td colspan="2" style="'+TD+'text-align:center;">No attempts recorded yet.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <div style="padding:8px 10px 0;margin-top:6px;border-top:1px solid #9CA3AF;text-align:center;font-size:9px;color:#4B5563;">
+            Generated by Senyasalin FSL Learning System for academic tracking and progress documentation.
+          </div>
+        </div>
+      `;
+
+      const opt = {
+        margin: [6, 6, 7, 6],
+        filename: 'FSL_Report_' + safeUsername + '_' + modeSlug + '_' + genDateShort + '_' + hh + mm + ss + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'thead'] }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    };
+    document.head.appendChild(script);
+  }
+
+  pdfToday.onclick = () => generatePDF('today');
+  pdfHistory.onclick = () => generatePDF('all');
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+})();
+</script>
+
+{% endblock %}

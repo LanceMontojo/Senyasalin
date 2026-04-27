@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Senyasalin startup" />
+  <title>Senyasalin</title>
+  <style>
+    :root {
+      --deep-blue: #4361EE;
+      --sky-blue: #4CC9F0;
+      --white: #FFFFFF;
+      --ink: #1E293B;
+      --shadow: rgba(67, 97, 238, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #EAF3FF 0%, #F4F8FF 100%);
+    }
+
+    .splash {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      animation: pageIn 280ms ease-out;
+      isolation: isolate;
+    }
+
+    .ambient {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .glow {
+      position: absolute;
+      width: 52vmin;
+      height: 52vmin;
+      min-width: 280px;
+      min-height: 280px;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(67, 97, 238, 0.22), rgba(76, 201, 240, 0.08) 48%, rgba(255, 255, 255, 0) 70%);
+      filter: blur(6px);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    .card {
+      z-index: 1;
+      width: min(360px, calc(100% - 36px));
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(67, 97, 238, 0.16);
+      border-radius: 24px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 18px 34px var(--shadow);
+      padding: 30px 22px 22px;
+      text-align: center;
+      transform: translateY(10px) scale(.98);
+      opacity: 0;
+      animation: cardIn 700ms cubic-bezier(.2,.8,.2,1) .08s forwards;
+    }
+
+    .logo-wrap {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 12px;
+      border-radius: 22px;
+      padding: 5px;
+      background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+      box-shadow: 0 10px 20px rgba(67, 97, 238, 0.26);
+      animation: pop 560ms cubic-bezier(.2,.8,.2,1) .16s both;
+      position: relative;
+    }
+
+    .logo-wrap::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 28px;
+      border: 2px solid rgba(67, 97, 238, 0.22);
+      animation: ring 2.2s ease-out infinite;
+    }
+
+    .logo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 17px;
+      background: var(--white);
+    }
+
+    .title {
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #475569;
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+
+    .loader {
+      width: 100%;
+      max-width: 220px;
+      margin: 0 auto;
+    }
+
+    .bar {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(67, 97, 238, 0.12);
+      overflow: hidden;
+      border: 1px solid rgba(67, 97, 238, 0.16);
+      position: relative;
+    }
+
+    .bar > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--deep-blue), var(--sky-blue));
+      animation: load 2200ms cubic-bezier(.2,.8,.2,1) forwards;
+    }
+
+    .bar > span::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 70px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      filter: blur(3px);
+      animation: shimmer 1.4s linear infinite;
+    }
+
+    .hint {
+      margin-top: 9px;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .splash.exit {
+      animation: pageOut 320ms ease forwards;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        border-radius: 20px;
+        padding: 26px 16px 18px;
+      }
+
+      .logo-wrap {
+        width: 82px;
+        height: 82px;
+        border-radius: 20px;
+      }
+
+      .logo {
+        border-radius: 15px;
+      }
+
+      .subtitle {
+        margin-bottom: 14px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @keyframes pageIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pageOut {
+      to { opacity: 0; transform: scale(1.015); }
+    }
+
+    @keyframes cardIn {
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(.82) rotate(-4deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @keyframes ring {
+      0% { transform: scale(.92); opacity: .7; }
+      100% { transform: scale(1.2); opacity: 0; }
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.06); }
+    }
+
+    @keyframes load {
+      to { width: 100%; }
+    }
+
+    @keyframes shimmer {
+      from { transform: translateX(-90px); }
+      to { transform: translateX(330px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="splash" id="splashRoot">
+    <div class="ambient" aria-hidden="true">
+      <div class="glow"></div>
+    </div>
+
+    <section class="card" aria-label="Startup Screen">
+      <div class="logo-wrap">
+        <img class="logo" src="{{ url_for('static', filename='img/logo5.png') }}" alt="Senyasalin logo" />
+      </div>
+
+      <h1 class="title">Senyasalin</h1>
+      <p class="subtitle">Filipino Sign Language Recognition</p>
+
+      <div class="loader" aria-hidden="true">
+        <div class="bar"><span></span></div>
+      </div>
+      <p class="hint">Starting Senyasalin...</p>
+    </section>
+  </div>
+
+  <script>
+    (function() {
+      const splash = document.getElementById('splashRoot');
+      const HOLD_MS = 2300;
+      const EXIT_MS = 260;
+
+      setTimeout(function() {
+        splash.classList.add('exit');
+        setTimeout(function() {
+          window.location.replace('{{ url_for("home") }}');
+        }, EXIT_MS);
+      }, HOLD_MS);
+    })();
+  </script>
+</body>
+</html>
