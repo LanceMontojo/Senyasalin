@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
-# Libraries for model inference and MediaPipe
+# Libraries for model inference and MediaPipe processing
 import torch
 import numpy as np
 import os
