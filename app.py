@@ -289,7 +289,6 @@ TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 use_trt = False
 TRT_MODEL_KEY = SINGLE_MODEL_KEY
 
-# Helper: map TensorRT dtype enum → numpy dtype
 def _trt_dtype_to_np(trt_dtype):
     """Convert a TensorRT DataType to the corresponding numpy dtype."""
     _map = {
@@ -342,7 +341,7 @@ print("Loaded Config:")
 print("SEQ_LEN from config:", SEQ_LEN)
 print(
     f"[APP] Loaded model {SINGLE_MODEL_KEY} from {MODEL_PROFILE['path']} "
-    f"→ hidden={MODEL_PROFILE['hidden_size']}, layers={MODEL_PROFILE['num_layers']}, "
+    f"-> hidden={MODEL_PROFILE['hidden_size']}, layers={MODEL_PROFILE['num_layers']}, "
     f"dropout={MODEL_PROFILE['dropout']}, classes={len(MODEL_PROFILE['classes'])}"
 )
 
@@ -381,7 +380,7 @@ _face_count_cache = 0        # cached person count
 _face_frame_counter = 0      # runs face detection every N frames
 
 def _serialize_landmarks(landmark_list):
-    """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
+    """Convert a MediaPipe NormalizedLandmarkList -> list of dicts."""
     if landmark_list is None:
         return None
     return [
@@ -471,7 +470,7 @@ def run_inference(x, model_key=SINGLE_MODEL_KEY):
         cuda.memcpy_dtoh_async(output_data, d_output, trt_stream)
         trt_stream.synchronize()
 
-        # Engine outputs raw logits → softmax in FP32
+        # Engine outputs raw logits -> softmax in FP32
         probs = torch.softmax(
             torch.tensor(output_data.astype(np.float32)),
             dim=1
@@ -852,7 +851,7 @@ def predict():
             "model": model_key,
             "demo": demo_path or f"No demo found for {label}"
         }
-        print(f"[PREDICT-{model_key}] {label} (conf={conf:.4f}) → {demo_path}")
+        print(f"[PREDICT-{model_key}] {label} (conf={conf:.4f}) -> {demo_path}")
         return jsonify(response)
 
     except Exception as e:

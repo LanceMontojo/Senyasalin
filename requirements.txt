@@ -10,7 +10,7 @@ psycopg2-binary
 # ML / Vision
 numpy<2       
 Pillow
-mediapipe
+mediapipe==0.10.14
 opencv-python-headless
 python-osc
 
